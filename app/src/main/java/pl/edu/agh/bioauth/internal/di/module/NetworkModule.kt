@@ -21,7 +21,7 @@ internal class NetworkModule : AbstractModule() {
 
     private val retrofit: Retrofit
         get() = Retrofit.Builder()
-            .baseUrl(ApiConstant.API_BASE)
+            .baseUrl(BuildConfig.API_BASE)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
