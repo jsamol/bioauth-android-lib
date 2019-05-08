@@ -14,5 +14,5 @@ internal interface EncryptionService {
     @GET("$API_URI/encryption/symmetricKey")
     fun getSymmetricnKey(@Query(APP_ID) appId: String,
                          @Query(APP_SECRET) appSecret: String,
-                         @Query(PUBLIC_KEY) publicKey: ByteArray) : Call<SymmetricKeyResponse>
+                         @Query(PUBLIC_KEY) publicKey: String) : Call<SymmetricKeyResponse>
 }

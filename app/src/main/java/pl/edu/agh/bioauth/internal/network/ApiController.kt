@@ -9,7 +9,7 @@ import retrofit2.Call
 internal class ApiController(private val encryptionService: EncryptionService) {
 
     @Throws(SdkUninitializedException::class)
-    fun getEncryptionKey(publicKey: ByteArray): Call<SymmetricKeyResponse> {
+    fun getEncryptionKey(publicKey: String): Call<SymmetricKeyResponse> {
         BioAuth.instance?.appCredentials?.run {
             return encryptionService.getSymmetricnKey(appId, appSecret, publicKey)
         } ?: throw SdkUninitializedException()
