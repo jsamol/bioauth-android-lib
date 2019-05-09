@@ -1,6 +1,6 @@
 package pl.edu.agh.bioauth.internal.biometrics.facerecognition
 
-import androidx.lifecycle.ViewModel
+import pl.edu.agh.bioauth.internal.base.BaseViewModel
 
-internal class FaceRecognitionViewModel : ViewModel() {
+internal class FaceRecognitionViewModel : BaseViewModel() {
 }
