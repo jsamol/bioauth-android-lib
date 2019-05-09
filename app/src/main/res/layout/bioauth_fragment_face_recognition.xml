@@ -4,4 +4,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <pl.edu.agh.bioauth.internal.biometrics.common.CameraTextureView
+        android:id="@+id/faceCameraTextureView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

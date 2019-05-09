@@ -1,6 +1,7 @@
 package pl.edu.agh.bioauth.internal.util
 
 import pl.edu.agh.bioauth.internal.exception.InjectionException
+import java.lang.IllegalStateException
 
 object ErrorUtil {
 
@@ -13,4 +14,6 @@ object ErrorUtil {
     fun failWithMultipleInjectingTypes(): Nothing = throw InjectionException(INJECTION_MULTIPLE_REQUESTED_TYPES)
 
     fun failWithUnknownInjectingProperty(): Nothing = throw InjectionException(INJECTION_UNKNOWN_REQUESTED_PROPERTY)
+
+    fun failWithIllegalState(): Nothing = throw IllegalStateException()
 }
