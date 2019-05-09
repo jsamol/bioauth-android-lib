@@ -3,6 +3,7 @@ package pl.edu.agh.bioauth.internal.di
 import android.app.Activity
 import android.app.Application
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModel
 import pl.edu.agh.bioauth.internal.di.annotation.Component
 import pl.edu.agh.bioauth.internal.di.annotation.Named
 import pl.edu.agh.bioauth.internal.di.annotation.Provider
@@ -33,10 +34,12 @@ internal object DependencyProvider {
     private val appComponent: AbstractComponent? by lazy { components[Application::class]?.newInstance() }
     private val activityComponents: MutableMap<in Activity, AbstractComponent> = mutableMapOf()
     private val fragmentComponents: MutableMap<in Fragment, AbstractComponent> = mutableMapOf()
+    private val viewModelComponents: MutableMap<in ViewModel, AbstractComponent> = mutableMapOf()
 
     fun initComponent(target: Any) {
         components[target::class]?.let { componentClass ->
             val targetMap = when (target) {
+                is ViewModel -> this::viewModelComponents
                 is Fragment -> this::fragmentComponents
                 is Activity -> this::activityComponents
                 else -> null
@@ -48,6 +51,7 @@ internal object DependencyProvider {
 
     fun cleanComponent(target: Any) {
         val targetMap = when (target) {
+            is ViewModel -> this::viewModelComponents
             is Fragment -> this::fragmentComponents
             is Activity -> this::activityComponents
             else -> null
@@ -60,6 +64,10 @@ internal object DependencyProvider {
         override fun getValue(thisRef: R, property: KProperty<*>): T {
             val appDependencies = appComponent?.dependencies ?: emptyMap()
             val dependencies = when (thisRef) {
+                is ViewModel -> {
+                    val viewModelDependencies = viewModelComponents[thisRef]?.dependencies ?: emptyMap()
+                    appDependencies + viewModelDependencies
+                }
                 is Fragment -> {
                     val fragmentDependencies = fragmentComponents[thisRef]?.dependencies ?: emptyMap()
                     val activityDependencies = activityComponents[thisRef.requireActivity()]?.dependencies ?: emptyMap()
