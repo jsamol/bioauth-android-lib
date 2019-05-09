@@ -8,7 +8,7 @@ import pl.edu.agh.bioauth.internal.di.annotation.Component
 import pl.edu.agh.bioauth.internal.di.annotation.Named
 import pl.edu.agh.bioauth.internal.di.annotation.Provider
 import pl.edu.agh.bioauth.internal.di.component.AbstractComponent
-import pl.edu.agh.bioauth.internal.di.component.AppComponent
+import pl.edu.agh.bioauth.internal.di.component.app.AppComponent
 import pl.edu.agh.bioauth.internal.exception.InjectionException
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KClass
