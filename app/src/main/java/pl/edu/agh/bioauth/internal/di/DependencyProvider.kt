@@ -10,6 +10,7 @@ import pl.edu.agh.bioauth.internal.di.annotation.Provider
 import pl.edu.agh.bioauth.internal.di.component.AbstractComponent
 import pl.edu.agh.bioauth.internal.di.component.app.AppComponent
 import pl.edu.agh.bioauth.internal.exception.InjectionException
+import pl.edu.agh.bioauth.internal.util.ErrorUtil
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
@@ -80,17 +81,15 @@ internal object DependencyProvider {
                 else -> appDependencies
             }
 
-            val injectableProperties = dependencies[property.returnType]
-                ?: throw InjectionException("Could not find the requested type")
+            val injectableProperties = dependencies[property.returnType] ?: ErrorUtil.failWithUnknownInjectingType()
 
             val propertyName = property.findAnnotation<Named>()?.value
 
             if (injectableProperties.size > 1) {
-                propertyName ?: throw InjectionException("Multiple properties of the same type")
+                propertyName ?: ErrorUtil.failWithMultipleInjectingTypes()
             }
 
-            return (injectableProperties.firstOrNull { it.name == propertyName }?.value as? T)
-                ?: throw InjectionException("Could not find the requested property")
+            return (injectableProperties.firstOrNull { it.name == propertyName }?.value as? T) ?: ErrorUtil.failWithUnknownInjectingProperty()
         }
     }
 }
