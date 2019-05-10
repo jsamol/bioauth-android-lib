@@ -2,8 +2,6 @@ package pl.edu.agh.bioauth.auth.listener
 
 import java.security.PublicKey
 
-interface RegistrationListener {
+interface RegistrationListener : ResultListener {
     fun onSuccess(publicKey: PublicKey)
-    fun onFailure(error: Throwable)
-    fun onError(error: Throwable)
 }

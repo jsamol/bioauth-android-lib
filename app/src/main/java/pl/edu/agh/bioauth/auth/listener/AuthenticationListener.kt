@@ -1,7 +1,5 @@
 package pl.edu.agh.bioauth.auth.listener
 
-interface AuthenticationListener {
+interface AuthenticationListener : ResultListener {
     fun onSuccess(userId: String, challenge: String, signedChallenge: String)
-    fun onFailure(error: Throwable)
-    fun onError(error: Throwable)
 }

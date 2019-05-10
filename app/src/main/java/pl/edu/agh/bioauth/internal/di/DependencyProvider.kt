@@ -9,14 +9,14 @@ import pl.edu.agh.bioauth.internal.di.annotation.Named
 import pl.edu.agh.bioauth.internal.di.annotation.Provider
 import pl.edu.agh.bioauth.internal.di.component.AbstractComponent
 import pl.edu.agh.bioauth.internal.di.component.app.AppComponent
-import pl.edu.agh.bioauth.internal.exception.InjectionException
+import pl.edu.agh.bioauth.internal.di.component.fragment.FaceRecognitionFragmentComponent
 import pl.edu.agh.bioauth.internal.util.ErrorUtil
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.findAnnotation
 
-@Provider(components = [AppComponent::class])
+@Provider(components = [AppComponent::class, FaceRecognitionFragmentComponent::class])
 internal object DependencyProvider {
 
     private val components: Map<KClass<out Any>, Class<out AbstractComponent>> =
@@ -61,7 +61,7 @@ internal object DependencyProvider {
         targetMap?.get()?.remove(target)
     }
 
-    fun <R, T> inject(): ReadOnlyProperty<R, T> = object : ReadOnlyProperty<R, T> {
+    fun <R, T> inject(init: (T.() -> Unit)?): ReadOnlyProperty<R, T> = object : ReadOnlyProperty<R, T> {
         override fun getValue(thisRef: R, property: KProperty<*>): T {
             val appDependencies = appComponent?.dependencies ?: emptyMap()
             val dependencies = when (thisRef) {
@@ -89,7 +89,8 @@ internal object DependencyProvider {
                 propertyName ?: ErrorUtil.failWithMultipleInjectingTypes()
             }
 
-            return (injectableProperties.firstOrNull { it.name == propertyName }?.value as? T) ?: ErrorUtil.failWithUnknownInjectingProperty()
+            return (injectableProperties.firstOrNull { it.name == propertyName }?.value as? T)?.apply { init?.invoke(this) }
+                ?: ErrorUtil.failWithUnknownInjectingProperty()
         }
     }
 }

@@ -4,8 +4,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <pl.edu.agh.bioauth.internal.biometrics.common.CameraTextureView
+    <pl.edu.agh.bioauth.internal.biometrics.common.view.CameraTextureView
         android:id="@+id/faceCameraTextureView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <pl.edu.agh.bioauth.internal.biometrics.common.view.CameraSurfaceView
+        android:id="@+id/faceCameraSurfaceView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
