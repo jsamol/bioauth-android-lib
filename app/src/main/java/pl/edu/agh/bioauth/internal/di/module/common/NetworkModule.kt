@@ -1,10 +1,10 @@
-package pl.edu.agh.bioauth.internal.di.module
+package pl.edu.agh.bioauth.internal.di.module.common
 
 
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import pl.edu.agh.bioauth.BuildConfig
-import pl.edu.agh.bioauth.internal.network.ApiConstant
+import pl.edu.agh.bioauth.internal.di.module.AbstractModule
 import pl.edu.agh.bioauth.internal.network.ApiController
 import pl.edu.agh.bioauth.internal.network.service.EncryptionService
 import retrofit2.Retrofit

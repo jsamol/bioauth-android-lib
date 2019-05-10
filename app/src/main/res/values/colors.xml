@@ -3,4 +3,7 @@
     <color name="colorPrimary">#008577</color>
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D81B60</color>
+
+    <!-- Camera View -->
+    <color name="bioauth_camera_view_overlay">#ffd11a</color>
 </resources>
