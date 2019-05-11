@@ -4,7 +4,7 @@ import pl.edu.agh.bioauth.exception.CameraException
 import pl.edu.agh.bioauth.internal.base.BaseViewModel
 import pl.edu.agh.bioauth.internal.biometrics.common.MethodType
 import pl.edu.agh.bioauth.internal.biometrics.facerecognition.CameraCaptureState
-import pl.edu.agh.bioauth.internal.biometrics.facerecognition.CameraCaptureState.PREVIEW
+import pl.edu.agh.bioauth.internal.biometrics.facerecognition.CameraCaptureState.FACE_DETECTION
 import java.io.File
 
 internal class FaceRecognitionViewModel : BaseViewModel() {
@@ -15,7 +15,7 @@ internal class FaceRecognitionViewModel : BaseViewModel() {
 
     var method: MethodType<*>? = null
 
-    var cameraCaptureState: CameraCaptureState = PREVIEW
+    var cameraCaptureState: CameraCaptureState = FACE_DETECTION
 
     fun processPhotos() {
 
@@ -26,6 +26,6 @@ internal class FaceRecognitionViewModel : BaseViewModel() {
     }
 
     companion object {
-        private const val PHOTOS_REQUIRED_NUMBER = 7
+        private const val PHOTOS_REQUIRED_NUMBER = 15
     }
 }

@@ -8,7 +8,7 @@ import java.io.IOException
 
 internal object FileUtil {
     private const val DEFAULT_PREFIX = "file"
-    private const val DEFAULT_SUFFIX = ""
+    private const val DEFAULT_SUFFIX = ".jpeg"
 
     private val appCacheDir: File? = BioAuth.instance?.applicationContext?.cacheDir
 
