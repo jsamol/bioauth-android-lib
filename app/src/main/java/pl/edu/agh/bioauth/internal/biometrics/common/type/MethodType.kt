@@ -1,4 +1,4 @@
-package pl.edu.agh.bioauth.internal.biometrics.common
+package pl.edu.agh.bioauth.internal.biometrics.common.type
 
 import pl.edu.agh.bioauth.auth.listener.AuthenticationListener
 import pl.edu.agh.bioauth.auth.listener.RegistrationListener

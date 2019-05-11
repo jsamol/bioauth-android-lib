@@ -11,7 +11,6 @@ import android.hardware.camera2.params.Face
 import android.media.ImageReader
 import android.os.Handler
 import android.os.HandlerThread
-import android.os.Looper
 import android.util.Size
 import android.view.Surface
 import kotlinx.android.synthetic.main.bioauth_fragment_face_recognition.*
@@ -20,9 +19,9 @@ import pl.edu.agh.bioauth.auth.listener.AuthenticationListener
 import pl.edu.agh.bioauth.auth.listener.RegistrationListener
 import pl.edu.agh.bioauth.exception.CameraException
 import pl.edu.agh.bioauth.internal.base.BaseFragment
-import pl.edu.agh.bioauth.internal.biometrics.common.AuthenticationMethod
-import pl.edu.agh.bioauth.internal.biometrics.common.MethodType
-import pl.edu.agh.bioauth.internal.biometrics.common.RegistrationMethod
+import pl.edu.agh.bioauth.internal.biometrics.common.type.AuthenticationMethod
+import pl.edu.agh.bioauth.internal.biometrics.common.type.MethodType
+import pl.edu.agh.bioauth.internal.biometrics.common.type.RegistrationMethod
 import pl.edu.agh.bioauth.internal.biometrics.facerecognition.CameraCaptureState.*
 import pl.edu.agh.bioauth.internal.biometrics.facerecognition.callback.FaceCameraStateCallback
 import pl.edu.agh.bioauth.internal.biometrics.facerecognition.callback.FaceCaptureCallback
@@ -133,7 +132,12 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
     }
 
     fun authenticate(userId: String?, authenticationListener: AuthenticationListener) {
-        initMethod(AuthenticationMethod(userId, authenticationListener))
+        initMethod(
+            AuthenticationMethod(
+                userId,
+                authenticationListener
+            )
+        )
     }
 
     private fun initMethod(methodType: MethodType<*>) {
@@ -269,7 +273,7 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
         backgroundHandler?.post(FileUtil.ImageSaver(reader.acquireNextImage(), currentPhoto))
         with (viewModel) {
             if (hasNotEnoughPhotos) {
-                currentPhoto = FileUtil.createTempFile()
+                currentPhoto = FileUtil.createTempFile(biometricsType)
                 cameraCaptureState = FACE_DETECTION
             } else {
                 processPhotos()
@@ -288,8 +292,8 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
                     val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
 
                     if (cameraDirection != null && map != null) {
-                        val largest = map.getOutputSizes(ImageFormat.JPEG).maxWith(SizeAreaComparator) ?: ErrorUtil.failWithCameraError()
-                        currentPhoto = FileUtil.createTempFile()
+                        val largest = map.getOutputSizes(ImageFormat.JPEG).minWith(SizeAreaComparator) ?: ErrorUtil.failWithCameraError()
+                        currentPhoto = FileUtil.createTempFile(viewModel.biometricsType)
                         imageReader =
                             ImageReader.newInstance(largest.width, largest.height, ImageFormat.JPEG, MAX_IMAGE_READER_IMAGES)
                                 .apply { setOnImageAvailableListener(onImageAvailableListener, backgroundHandler) }

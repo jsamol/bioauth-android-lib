@@ -1,6 +1,7 @@
 package pl.edu.agh.bioauth.internal.util
 
 import pl.edu.agh.bioauth.exception.CameraException
+import pl.edu.agh.bioauth.exception.SdkUninitializedException
 import pl.edu.agh.bioauth.internal.exception.InjectionException
 import java.lang.Exception
 import java.lang.IllegalStateException
@@ -20,6 +21,8 @@ internal object ErrorUtil {
     private const val CAMERA_INTERRUPTED_CLOSING = "Interrupted while trying to lock camera closing."
     private const val CAMERA_PERMISSION_DENIED = "Could not open the camera. Camera permission has been denied."
     private const val CAMERA_API_NOT_SUPPORTED = "Camera2 API is not supported on this device."
+
+    fun failWithSdkUninitialized(): Nothing = throw SdkUninitializedException()
 
     fun failWithUnknownInjectingType(): Nothing = throw InjectionException(INJECTION_UNKNOWN_REQUESTED_TYPE)
 
