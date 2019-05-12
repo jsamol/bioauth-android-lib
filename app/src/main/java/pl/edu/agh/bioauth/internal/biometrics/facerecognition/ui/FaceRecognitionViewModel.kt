@@ -17,6 +17,7 @@ import pl.edu.agh.bioauth.internal.network.callback.AuthenticationCallback
 import pl.edu.agh.bioauth.internal.network.callback.RegistrationCallback
 import pl.edu.agh.bioauth.internal.util.ErrorUtil
 import pl.edu.agh.bioauth.internal.util.SecurityUtil
+import pl.edu.agh.bioauth.stats.StatsUtil
 import java.io.File
 
 internal class FaceRecognitionViewModel : BaseViewModel() {
@@ -57,6 +58,7 @@ internal class FaceRecognitionViewModel : BaseViewModel() {
     fun processPhotos() {
         method?.let {
             try {
+                StatsUtil.onStart()
                 val processedPhotos = photoProcessor.preprocessPhotos(photos)
                 when (it) {
                     is RegistrationMethod -> registerPhotos(it.userId, processedPhotos)
@@ -73,6 +75,7 @@ internal class FaceRecognitionViewModel : BaseViewModel() {
     }
 
     fun onCameraError(cameraException: CameraException) {
+        StatsUtil.onFailure()
         method?.listener?.onFailure(cameraException)
     }
 

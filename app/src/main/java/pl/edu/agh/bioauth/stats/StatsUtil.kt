@@ -108,4 +108,10 @@ object StatsUtil {
             apiController.uploadStatistics(statsData).enqueue(voidCallback)
         }
     }
+
+    fun onFailure() {
+        start = 0
+        end = 0
+        initialData = null
+    }
 }
