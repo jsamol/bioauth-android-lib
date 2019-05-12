@@ -12,3 +12,7 @@ internal fun <T, I: Iterable<T>> I.splitBy(predicate: (T) -> Boolean) : Pair<Lis
 
     return Pair(positives, negatives)
 }
+
+internal fun List<Int>.median(): Int? =
+        if (isNotEmpty()) sorted().run { ((get(size / 2)) + get((size - 1) / 2)) / 2 }
+        else null

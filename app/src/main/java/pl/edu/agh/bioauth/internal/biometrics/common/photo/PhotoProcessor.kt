@@ -3,6 +3,7 @@ package pl.edu.agh.bioauth.internal.biometrics.common.photo
 import pl.edu.agh.bioauth.auth.LivenessMode
 import pl.edu.agh.bioauth.auth.LivenessMode.*
 import pl.edu.agh.bioauth.internal.biometrics.common.exception.LivenessException
+import pl.edu.agh.bioauth.internal.biometrics.common.photo.liveness.PhotoLivenessDetector
 import pl.edu.agh.bioauth.internal.biometrics.common.type.BiometricsType
 import pl.edu.agh.bioauth.internal.util.ErrorUtil
 import pl.edu.agh.bioauth.internal.util.FileUtil
