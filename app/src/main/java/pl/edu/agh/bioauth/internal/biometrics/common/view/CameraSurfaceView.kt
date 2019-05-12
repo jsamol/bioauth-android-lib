@@ -13,6 +13,8 @@ import android.view.SurfaceView
 import androidx.core.content.res.ResourcesCompat
 import pl.edu.agh.bioauth.BioAuth
 import pl.edu.agh.bioauth.R
+import pl.edu.agh.bioauth.exception.SdkUninitializedException
+import pl.edu.agh.bioauth.internal.util.ErrorUtil
 
 internal class CameraSurfaceView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
@@ -38,12 +40,13 @@ internal class CameraSurfaceView @JvmOverloads constructor(
 
     private inner class SurfaceHolderCallback : SurfaceHolder.Callback {
 
-        private val appResources: Resources? = BioAuth.instance?.applicationContext?.resources
+        @get:Throws(SdkUninitializedException::class)
+        private val resources: Resources
+            get() = BioAuth.instance?.applicationContext?.resources ?: ErrorUtil.failWithSdkUninitialized()
 
+        @get:Throws(SdkUninitializedException::class)
         private val paint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = appResources?.let {
-                ResourcesCompat.getColor(it, R.color.bioauth_camera_view_overlay, null)
-            } ?: Color.BLACK
+            color = ResourcesCompat.getColor(resources, R.color.bioauth_camera_view_overlay, null)
             strokeWidth =
                 BOX_STROKE_WIDTH
             style = Paint.Style.STROKE
