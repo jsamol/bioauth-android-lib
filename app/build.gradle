@@ -4,10 +4,6 @@ apply plugin: 'kotlin-android'
 
 apply plugin: 'kotlin-android-extensions'
 
-// TODO: Remove after migrating to production API
-def localProperties = new Properties()
-localProperties.load(project.rootProject.file("local.properties").newDataInputStream())
-
 android {
     compileSdkVersion 28
     defaultConfig {
@@ -17,8 +13,7 @@ android {
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
-        // TODO: Replace after migrating to production API
-        buildConfigField('String', 'API_BASE', localProperties.getProperty('api.base'))
+        buildConfigField('String', 'API_BASE', '"http://35.157.113.241:8000"')
     }
     buildTypes {
         release {
