@@ -24,7 +24,6 @@ internal class PhotoLivenessDetector {
     private val resources: Resources
         get() = BioAuth.instance?.applicationContext?.resources ?: ErrorUtil.failWithSdkUninitialized()
 
-    @Throws(SdkUninitializedException::class)
     fun testLiveness(samples: List<File>): Boolean {
         val faceCascadeFile = FileUtil.createTempFile(FileType.XML)
         resources.openRawResource(R.raw.bioauth_haarcascade_frontalface_default).use { input ->

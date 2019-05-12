@@ -18,17 +18,14 @@ internal object FileUtil {
     private val appCacheDir: File
         get() = BioAuth.instance?.applicationContext?.cacheDir ?: ErrorUtil.failWithSdkUninitialized()
 
-    @Throws(SdkUninitializedException::class)
     fun createTempFile(fileType: String): File =
         createTempFile(null, fileType, "")
 
-    @Throws(SdkUninitializedException::class)
     fun createTempFile(biometricsType: BiometricsType): File =
         with (biometricsType) {
             createTempFile(methodName, fileType, tempDir)
         }
 
-    @Throws(SdkUninitializedException::class)
     fun createMetadataTempFile(biometricsType: BiometricsType, values: Map<String, Any?>): File =
         createTempFile(META_DATA_FILE_PREFIX, JSON, biometricsType.tempDir).apply {
             bufferedWriter().use {
@@ -36,14 +33,12 @@ internal object FileUtil {
             }
         }
 
-    @Throws(SdkUninitializedException::class)
     fun deleteTempFiles(biometricsType: BiometricsType) {
         val tempDir = File(appCacheDir, biometricsType.tempDir)
         tempDir.deleteRecursively()
     }
 
 
-    @Throws(SdkUninitializedException::class)
     private fun createTempFile(prefix: String?, fileType: String, dir: String): File {
         val tempDir = File(appCacheDir, dir)
         if (!tempDir.exists()) {
