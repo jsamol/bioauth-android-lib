@@ -1,4 +1,4 @@
-package pl.edu.agh.bioauth.internal.network.model
+package pl.edu.agh.bioauth.internal.network.model.response
 
 import java.util.*
 

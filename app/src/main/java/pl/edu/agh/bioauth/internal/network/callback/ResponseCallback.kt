@@ -2,7 +2,7 @@ package pl.edu.agh.bioauth.internal.network.callback
 
 import com.google.gson.Gson
 import pl.edu.agh.bioauth.internal.biometrics.common.type.BiometricsType
-import pl.edu.agh.bioauth.internal.network.model.ErrorResponse
+import pl.edu.agh.bioauth.internal.network.model.response.ErrorResponse
 import pl.edu.agh.bioauth.internal.util.FileUtil
 import pl.edu.agh.bioauth.internal.util.extension.parse
 import retrofit2.Callback
