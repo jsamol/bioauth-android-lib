@@ -11,11 +11,16 @@ import java.io.FileOutputStream
 import java.io.IOException
 
 internal object FileUtil {
+    private const val DEFAULT_FILE_PREFIX = "file"
     private const val META_DATA_FILE_PREFIX = "meta_data"
 
     @get:Throws(SdkUninitializedException::class)
     private val appCacheDir: File
         get() = BioAuth.instance?.applicationContext?.cacheDir ?: ErrorUtil.failWithSdkUninitialized()
+
+    @Throws(SdkUninitializedException::class)
+    fun createTempFile(fileType: String): File =
+        createTempFile(null, fileType, "")
 
     @Throws(SdkUninitializedException::class)
     fun createTempFile(biometricsType: BiometricsType): File =
@@ -39,12 +44,12 @@ internal object FileUtil {
 
 
     @Throws(SdkUninitializedException::class)
-    private fun createTempFile(prefix: String, fileType: String, dir: String): File {
+    private fun createTempFile(prefix: String?, fileType: String, dir: String): File {
         val tempDir = File(appCacheDir, dir)
         if (!tempDir.exists()) {
             tempDir.mkdir()
         }
-        return File.createTempFile(prefix, fileType, tempDir)
+        return File.createTempFile(prefix ?: DEFAULT_FILE_PREFIX, fileType, tempDir)
     }
 
     class ImageSaver(private val image: Image, private val imageFile: File?) : Runnable {
