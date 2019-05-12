@@ -33,11 +33,7 @@ import pl.edu.agh.bioauth.internal.biometrics.facerecognition.listener.FaceSurfa
 import pl.edu.agh.bioauth.internal.util.ErrorUtil
 import pl.edu.agh.bioauth.internal.util.FileUtil
 import pl.edu.agh.bioauth.internal.util.PermissionRequestCode
-import pl.edu.agh.bioauth.internal.util.comparator.SizeAreaComparator
-import pl.edu.agh.bioauth.internal.util.extension.assertEqual
-import pl.edu.agh.bioauth.internal.util.extension.limitTo
-import pl.edu.agh.bioauth.internal.util.extension.splitBy
-import pl.edu.agh.bioauth.internal.util.extension.unwrap
+import pl.edu.agh.bioauth.internal.util.extension.*
 import java.io.File
 import java.util.*
 import java.util.concurrent.Semaphore
@@ -294,10 +290,13 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
                     val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
 
                     if (cameraDirection != null && map != null) {
-                        val largest = map.getOutputSizes(ImageFormat.JPEG).minWith(SizeAreaComparator) ?: ErrorUtil.failWithCameraError()
+                        val outputSize = map.getOutputSizes(ImageFormat.JPEG)
+                            .filterNot { it.toComparable() > Size(MAX_CAPTURE_WIDTH, MAX_CAPTURE_HEIGHT) }
+                            .maxBy { it.getArea() } ?: ErrorUtil.failWithCameraError()
+                        
                         currentPhoto = FileUtil.createTempFile(viewModel.biometricsType)
                         imageReader =
-                            ImageReader.newInstance(largest.width, largest.height, ImageFormat.JPEG, MAX_IMAGE_READER_IMAGES)
+                            ImageReader.newInstance(outputSize.width, outputSize.height, ImageFormat.JPEG, MAX_IMAGE_READER_IMAGES)
                                 .apply { setOnImageAvailableListener(onImageAvailableListener, backgroundHandler) }
 
                         val defaultDisplay = activity?.windowManager?.defaultDisplay ?: ErrorUtil.failWithCameraError()
@@ -323,7 +322,7 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
                             rotatedPreviewHeight,
                             maxPreviewWidth,
                             maxPreviewHeight,
-                            largest
+                            outputSize
                         )
 
                         previewSize?.let {
@@ -373,8 +372,8 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
             .unwrap(sizesBigEnough, sizesNotBigEnough)
 
         return when {
-            sizesBigEnough.isNotEmpty() -> sizesBigEnough.minWith(SizeAreaComparator)
-            sizesNotBigEnough.isNotEmpty() -> sizesNotBigEnough.maxWith(SizeAreaComparator)
+            sizesBigEnough.isNotEmpty() -> sizesBigEnough.minBy { it.getArea() }
+            sizesNotBigEnough.isNotEmpty() -> sizesNotBigEnough.maxBy { it.getArea() }
             else -> null
         } ?: choices[0]
     }
@@ -586,6 +585,9 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
 
         private const val MAX_PREVIEW_WIDTH = 1920
         private const val MAX_PREVIEW_HEIGHT = 1080
+
+        private const val MAX_CAPTURE_WIDTH = 640
+        private const val MAX_CAPTURE_HEIGHT = 480
 
         private const val CAMERA_LOCK_TIMEOUT = 2500L
     }
