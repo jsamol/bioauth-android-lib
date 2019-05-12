@@ -61,7 +61,7 @@ internal object DependencyProvider {
         targetMap?.get()?.remove(target)
     }
 
-    fun <R, T> inject(init: (T.() -> Unit)?): ReadOnlyProperty<R, T> = object : ReadOnlyProperty<R, T> {
+    fun <R, T> inject(init: (T.() -> Unit)? = null): ReadOnlyProperty<R, T> = object : ReadOnlyProperty<R, T> {
         override fun getValue(thisRef: R, property: KProperty<*>): T {
             val appDependencies = appComponent?.dependencies ?: emptyMap()
             val dependencies = when (thisRef) {

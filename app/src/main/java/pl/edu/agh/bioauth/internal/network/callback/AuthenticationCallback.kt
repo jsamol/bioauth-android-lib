@@ -4,11 +4,8 @@ import com.google.gson.Gson
 import pl.edu.agh.bioauth.auth.listener.AuthenticationListener
 import pl.edu.agh.bioauth.exception.AuthenticationException
 import pl.edu.agh.bioauth.internal.biometrics.common.type.BiometricsType
-import pl.edu.agh.bioauth.internal.network.model.AuthenticateResponse
-import pl.edu.agh.bioauth.internal.network.model.ErrorResponse
-import pl.edu.agh.bioauth.internal.util.extension.parse
+import pl.edu.agh.bioauth.internal.network.model.response.AuthenticateResponse
 import retrofit2.Call
-import retrofit2.Callback
 import retrofit2.Response
 
 internal class AuthenticationCallback(

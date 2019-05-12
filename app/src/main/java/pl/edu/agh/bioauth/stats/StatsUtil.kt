@@ -9,14 +9,21 @@ import android.net.NetworkCapabilities
 import android.os.BatteryManager
 import pl.edu.agh.bioauth.BioAuth
 import pl.edu.agh.bioauth.exception.SdkUninitializedException
+import pl.edu.agh.bioauth.internal.di.DependencyProvider
+import pl.edu.agh.bioauth.internal.network.ApiController
+import pl.edu.agh.bioauth.internal.network.callback.VoidCallback
 import pl.edu.agh.bioauth.internal.util.ErrorUtil
-import pl.edu.agh.bioauth.internal.util.Logger
 import pl.edu.agh.bioauth.internal.util.extension.round
 import pl.edu.agh.bioauth.stats.data.BatteryData
+import pl.edu.agh.bioauth.stats.data.InitialData
 import pl.edu.agh.bioauth.stats.data.MemoryData
 import pl.edu.agh.bioauth.stats.data.StatsData
 
 object StatsUtil {
+
+    private val apiController: ApiController by DependencyProvider.inject()
+
+    private val voidCallback: VoidCallback by DependencyProvider.inject()
 
     @get:Throws(SdkUninitializedException::class)
     private val applicationContext: Context
@@ -34,7 +41,7 @@ object StatsUtil {
         applicationContext.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
     }
 
-    private var statsData: StatsData? = null
+    private var initialData: InitialData? = null
 
     private var start: Long = 0
     private var end: Long = 0
@@ -88,13 +95,17 @@ object StatsUtil {
         }
 
     fun onStart() {
-        statsData = StatsData(batteryData, connectionType, memoryData)
-        Logger.d(this, statsData.toString())
+        initialData = InitialData(batteryData, connectionType, memoryData)
         start = System.currentTimeMillis()
     }
 
     fun onEnd() {
         end = System.currentTimeMillis()
-        Logger.d(this, "Total time: $totalTime")
+        initialData?.let {
+            val batteryDrain = batteryData.batteryLevel - it.batteryData.batteryLevel
+            val statsData = StatsData(it, batteryDrain, totalTime)
+
+            apiController.uploadStatistics(statsData).enqueue(voidCallback)
+        }
     }
 }

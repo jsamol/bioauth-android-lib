@@ -2,8 +2,8 @@ package pl.edu.agh.bioauth.internal.network.service
 
 import okhttp3.MultipartBody
 import pl.edu.agh.bioauth.internal.network.ApiConstant.AUTH_URI
-import pl.edu.agh.bioauth.internal.network.model.AuthenticateResponse
-import pl.edu.agh.bioauth.internal.network.model.RegisterResponse
+import pl.edu.agh.bioauth.internal.network.model.response.AuthenticateResponse
+import pl.edu.agh.bioauth.internal.network.model.response.RegisterResponse
 import retrofit2.Call
 import retrofit2.http.Multipart
 import retrofit2.http.POST
