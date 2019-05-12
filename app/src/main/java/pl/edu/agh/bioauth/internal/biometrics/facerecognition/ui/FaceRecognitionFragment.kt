@@ -15,6 +15,7 @@ import android.util.Size
 import android.view.Surface
 import kotlinx.android.synthetic.main.bioauth_fragment_face_recognition.*
 import pl.edu.agh.bioauth.R
+import pl.edu.agh.bioauth.auth.LivenessMode
 import pl.edu.agh.bioauth.auth.listener.AuthenticationListener
 import pl.edu.agh.bioauth.auth.listener.RegistrationListener
 import pl.edu.agh.bioauth.exception.CameraException
@@ -127,15 +128,16 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
         }
     }
 
-    fun register(userId: String, registrationListener: RegistrationListener) {
-        initMethod(RegistrationMethod(userId, registrationListener))
+    fun register(userId: String, registrationListener: RegistrationListener, livenessMode: LivenessMode) {
+        initMethod(RegistrationMethod(userId, registrationListener, livenessMode))
     }
 
-    fun authenticate(userId: String?, authenticationListener: AuthenticationListener) {
+    fun authenticate(userId: String?, authenticationListener: AuthenticationListener, livenessMode: LivenessMode) {
         initMethod(
             AuthenticationMethod(
                 userId,
-                authenticationListener
+                authenticationListener,
+                livenessMode
             )
         )
     }

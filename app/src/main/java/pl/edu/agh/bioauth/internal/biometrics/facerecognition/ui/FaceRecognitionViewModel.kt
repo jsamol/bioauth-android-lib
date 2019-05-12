@@ -1,7 +1,10 @@
 package pl.edu.agh.bioauth.internal.biometrics.facerecognition.ui
 
+import pl.edu.agh.bioauth.exception.AuthenticationException
 import pl.edu.agh.bioauth.exception.CameraException
+import pl.edu.agh.bioauth.exception.RegistrationException
 import pl.edu.agh.bioauth.internal.base.BaseViewModel
+import pl.edu.agh.bioauth.internal.biometrics.common.exception.LivenessException
 import pl.edu.agh.bioauth.internal.biometrics.common.photo.PhotoProcessor
 import pl.edu.agh.bioauth.internal.biometrics.common.type.AuthenticationMethod
 import pl.edu.agh.bioauth.internal.biometrics.common.type.BiometricsType
@@ -28,6 +31,7 @@ internal class FaceRecognitionViewModel : BaseViewModel() {
         set(value) {
             field = value
             value?.let {
+                photoProcessor.livenessMode = it.livenessMode
                 when (it) {
                     is RegistrationMethod -> registrationCallback.listener = it.listener
                     is AuthenticationMethod -> authenticationCallback.listener = it.listener
@@ -39,7 +43,9 @@ internal class FaceRecognitionViewModel : BaseViewModel() {
 
     private val apiController: ApiController by inject()
 
-    private val photoProcessor: PhotoProcessor by inject()
+    private val photoProcessor: PhotoProcessor by inject {
+        biometricsType = this@FaceRecognitionViewModel.biometricsType
+    }
 
     private val securityUtil: SecurityUtil by inject()
 
@@ -50,10 +56,18 @@ internal class FaceRecognitionViewModel : BaseViewModel() {
     @Throws(IllegalStateException::class)
     fun processPhotos() {
         method?.let {
-            val processedPhotos = photoProcessor.preprocessPhotos(photos)
-            when (it) {
-                is RegistrationMethod -> registerPhotos(it.userId, processedPhotos)
-                is AuthenticationMethod -> authenticatePhotos(it.userId, processedPhotos)
+            try {
+                val processedPhotos = photoProcessor.preprocessPhotos(photos)
+                when (it) {
+                    is RegistrationMethod -> registerPhotos(it.userId, processedPhotos)
+                    is AuthenticationMethod -> authenticatePhotos(it.userId, processedPhotos)
+                }
+            } catch (e: LivenessException) {
+                val exception = when (it) {
+                    is RegistrationMethod -> RegistrationException(e.message)
+                    is AuthenticationMethod -> AuthenticationException(e.message)
+                }
+                it.listener.onFailure(exception)
             }
         } ?: ErrorUtil.failWithIllegalState()
     }
