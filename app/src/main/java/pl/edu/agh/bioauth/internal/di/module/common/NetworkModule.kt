@@ -6,7 +6,9 @@ import okhttp3.logging.HttpLoggingInterceptor
 import pl.edu.agh.bioauth.BuildConfig
 import pl.edu.agh.bioauth.internal.di.module.AbstractModule
 import pl.edu.agh.bioauth.internal.network.ApiController
+import pl.edu.agh.bioauth.internal.network.service.AuthenticationService
 import pl.edu.agh.bioauth.internal.network.service.EncryptionService
+import pl.edu.agh.bioauth.internal.util.SecurityUtil
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -26,10 +28,12 @@ internal class NetworkModule : AbstractModule() {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
+    private val authenticationService: AuthenticationService
+        get() = retrofit.create(AuthenticationService::class.java)
+
     private val encryptionService: EncryptionService
         get() = retrofit.create(EncryptionService::class.java)
 
-
     val apiController: ApiController
-        get() = ApiController(encryptionService)
+        get() = ApiController(authenticationService, encryptionService)
 }

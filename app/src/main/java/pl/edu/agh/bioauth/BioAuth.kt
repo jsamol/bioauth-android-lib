@@ -8,6 +8,8 @@ class BioAuth(context: Context, appId: String, appSecret: String) {
     internal val appCredentials: AppCredentials = AppCredentials(appId, appSecret)
 
     companion object {
+        internal const val KEY_PAIR_ALGORITHM = "RSA"
+
         internal var instance: BioAuth? = null
 
         fun init(context: Context, appId: String, appSecret: String) {

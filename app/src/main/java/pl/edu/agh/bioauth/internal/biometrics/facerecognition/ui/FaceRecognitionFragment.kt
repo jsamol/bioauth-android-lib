@@ -11,27 +11,27 @@ import android.hardware.camera2.params.Face
 import android.media.ImageReader
 import android.os.Handler
 import android.os.HandlerThread
-import android.os.Looper
 import android.util.Size
 import android.view.Surface
 import kotlinx.android.synthetic.main.bioauth_fragment_face_recognition.*
 import pl.edu.agh.bioauth.R
+import pl.edu.agh.bioauth.auth.LivenessMode
 import pl.edu.agh.bioauth.auth.listener.AuthenticationListener
 import pl.edu.agh.bioauth.auth.listener.RegistrationListener
 import pl.edu.agh.bioauth.exception.CameraException
 import pl.edu.agh.bioauth.internal.base.BaseFragment
-import pl.edu.agh.bioauth.internal.biometrics.common.AuthenticationMethod
-import pl.edu.agh.bioauth.internal.biometrics.common.MethodType
-import pl.edu.agh.bioauth.internal.biometrics.common.RegistrationMethod
+import pl.edu.agh.bioauth.internal.biometrics.common.type.AuthenticationMethod
+import pl.edu.agh.bioauth.internal.biometrics.common.type.MethodType
+import pl.edu.agh.bioauth.internal.biometrics.common.type.RegistrationMethod
 import pl.edu.agh.bioauth.internal.biometrics.facerecognition.CameraCaptureState.*
 import pl.edu.agh.bioauth.internal.biometrics.facerecognition.callback.FaceCameraStateCallback
 import pl.edu.agh.bioauth.internal.biometrics.facerecognition.callback.FaceCaptureCallback
 import pl.edu.agh.bioauth.internal.biometrics.facerecognition.callback.FaceCaptureSessionCallback
 import pl.edu.agh.bioauth.internal.biometrics.facerecognition.callback.FacePrecaptureCallback
+import pl.edu.agh.bioauth.internal.biometrics.facerecognition.listener.FaceOnImageAvailableListener
 import pl.edu.agh.bioauth.internal.biometrics.facerecognition.listener.FaceSurfaceTextureListener
 import pl.edu.agh.bioauth.internal.util.ErrorUtil
 import pl.edu.agh.bioauth.internal.util.FileUtil
-import pl.edu.agh.bioauth.internal.util.Logger
 import pl.edu.agh.bioauth.internal.util.PermissionRequestCode
 import pl.edu.agh.bioauth.internal.util.comparator.SizeAreaComparator
 import pl.edu.agh.bioauth.internal.util.extension.assertEqual
@@ -48,6 +48,10 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
 
     override val viewModelType: Class<FaceRecognitionViewModel> = FaceRecognitionViewModel::class.java
     override val layoutId: Int = R.layout.bioauth_fragment_face_recognition
+
+    private val onImageAvailableListener: FaceOnImageAvailableListener by inject {
+        onImageAvailable = this@FaceRecognitionFragment::onImageAvailable
+    }
 
     private val surfaceTextureListener: FaceSurfaceTextureListener by inject {
         initListeners(::checkPermissionsAndOpenCamera, ::configureTransform)
@@ -92,7 +96,11 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
     private var previewRequestBuilder: CaptureRequest.Builder? = null
     private var previewRequest: CaptureRequest? = null
 
-    private var currentPhoto: File? = null
+    @get:Synchronized
+    @set:Synchronized
+    private var currentPhoto: File?
+        get() = viewModel.photos.lastOrNull()
+        set(value) { value?.let { viewModel.photos.add(it) } }
 
     private val isLandscapeOrientation: Boolean
         get() = (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
@@ -120,12 +128,18 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
         }
     }
 
-    fun register(userId: String, registrationListener: RegistrationListener) {
-        initMethod(RegistrationMethod(userId, registrationListener))
+    fun register(userId: String, registrationListener: RegistrationListener, livenessMode: LivenessMode) {
+        initMethod(RegistrationMethod(userId, registrationListener, livenessMode))
     }
 
-    fun authenticate(userId: String?, authenticationListener: AuthenticationListener) {
-        initMethod(AuthenticationMethod(userId, authenticationListener))
+    fun authenticate(userId: String?, authenticationListener: AuthenticationListener, livenessMode: LivenessMode) {
+        initMethod(
+            AuthenticationMethod(
+                userId,
+                authenticationListener,
+                livenessMode
+            )
+        )
     }
 
     private fun initMethod(methodType: MethodType<*>) {
@@ -257,6 +271,18 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
         }
     }
 
+    private fun onImageAvailable(reader: ImageReader) {
+        backgroundHandler?.post(FileUtil.ImageSaver(reader.acquireNextImage(), currentPhoto))
+        with (viewModel) {
+            if (hasNotEnoughPhotos) {
+                currentPhoto = FileUtil.createTempFile(biometricsType)
+                cameraCaptureState = FACE_DETECTION
+            } else {
+                processPhotos()
+            }
+        }
+    }
+
     @Throws(CameraException::class)
     private fun setupCameraOutputs(width: Int, height: Int) {
         cameraManager?.let { manager ->
@@ -268,13 +294,11 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
                     val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
 
                     if (cameraDirection != null && map != null) {
-                        val largest = map.getOutputSizes(ImageFormat.JPEG).maxWith(SizeAreaComparator) ?: ErrorUtil.failWithCameraError()
+                        val largest = map.getOutputSizes(ImageFormat.JPEG).minWith(SizeAreaComparator) ?: ErrorUtil.failWithCameraError()
+                        currentPhoto = FileUtil.createTempFile(viewModel.biometricsType)
                         imageReader =
                             ImageReader.newInstance(largest.width, largest.height, ImageFormat.JPEG, MAX_IMAGE_READER_IMAGES)
-                                .apply { setOnImageAvailableListener({
-                                    currentPhoto = FileUtil.createTempFile()
-                                    backgroundHandler?.post(FileUtil.ImageSaver(it.acquireNextImage(), currentPhoto))
-                                }, backgroundHandler) }
+                                .apply { setOnImageAvailableListener(onImageAvailableListener, backgroundHandler) }
 
                         val defaultDisplay = activity?.windowManager?.defaultDisplay ?: ErrorUtil.failWithCameraError()
                         val displayRotation = defaultDisplay.rotation
@@ -391,14 +415,13 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
 
     private fun processCaptureResult(captureResult: CaptureResult) {
         when (viewModel.cameraCaptureState) {
-            PREVIEW -> {
-                if (viewModel.hasNotEnoughPhotos) {
-                    val mode = captureResult.get(CaptureResult.STATISTICS_FACE_DETECT_MODE)
-                    val faces = captureResult.get(CaptureResult.STATISTICS_FACES)
+            PREVIEW -> Unit
+            FACE_DETECTION -> {
+                val mode = captureResult.get(CaptureResult.STATISTICS_FACE_DETECT_MODE)
+                val faces = captureResult.get(CaptureResult.STATISTICS_FACES)
 
-                    if (faces?.isNotEmpty() == true && mode != null) {
-                        takePhotoIfFaceInRightPosition(faces[0])
-                    }
+                if (faces?.isNotEmpty() == true && mode != null) {
+                    takePhotoIfFaceInRightPosition(faces[0])
                 }
             }
             WAITING_LOCK -> capturePicture(captureResult)
@@ -430,7 +453,6 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
 
                     val translatedBox = translateBox(box, size)
                     if (translatedBox.contains(xCenter, yCenter)) {
-                        Logger.d(this, "Capture triggered")
                         lockFocus()
                     }
                 }
@@ -486,9 +508,10 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
         }
     }
 
+    @Throws(CameraException::class)
     private fun captureStillPicture() {
         try {
-            val rotation = activity?.windowManager?.defaultDisplay?.rotation ?: throw CameraException()
+            val rotation = activity?.windowManager?.defaultDisplay?.rotation ?: ErrorUtil.failWithCameraError()
             val captureBuilder =
                 cameraDevice
                     ?.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
@@ -496,12 +519,12 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
                         imageReader?.surface?.let { addTarget(it) }
 
                         val orientation = when (rotation) {
-                            Surface.ROTATION_0 -> 0
-                            Surface.ROTATION_90 -> 90
-                            Surface.ROTATION_180 -> 180
-                            Surface.ROTATION_270 -> 270
-                            else -> null
-                        } ?: throw CameraException()
+                            Surface.ROTATION_0 -> 90
+                            Surface.ROTATION_90 -> 0
+                            Surface.ROTATION_180 -> 270
+                            Surface.ROTATION_270 -> 180
+                            else -> ErrorUtil.failWithCameraError()
+                        }
 
                         set(CaptureRequest.JPEG_ORIENTATION, (orientation + sensorOrientation + 270) % 360)
                         set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
@@ -509,7 +532,7 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
             captureSession?.run {
                 stopRepeating()
                 abortCaptures()
-                captureBuilder?.let { capture(it.build(), captureCallback, Handler(Looper.getMainLooper())) }
+                captureBuilder?.let { capture(it.build(), captureCallback, null) }
             }
         } catch (e: CameraAccessException) {
             ErrorUtil.failWithCameraError(viewModel::onCameraError, e)
@@ -530,12 +553,6 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
     }
 
     private fun onCaptureCompleted() {
-        with (viewModel) {
-            currentPhoto?.let { photos.add(it) }
-            if (!hasNotEnoughPhotos) {
-                processPhotos()
-            }
-        }
         unlockFocus()
     }
 
@@ -555,9 +572,7 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
                 set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL)
                 captureSession?.capture(build(), precaptureCallback, backgroundHandler)
             }
-
             viewModel.cameraCaptureState = PREVIEW
-
             previewRequest?.let { captureSession?.setRepeatingRequest(it, precaptureCallback, backgroundHandler) }
         } catch (e: CameraAccessException) {
             ErrorUtil.failWithCameraError(viewModel::onCameraError)
@@ -573,6 +588,5 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
         private const val MAX_PREVIEW_HEIGHT = 1080
 
         private const val CAMERA_LOCK_TIMEOUT = 2500L
-        private const val CAMERA_CAPTURE_PHOTO_DELAY = 500L
     }
 }
