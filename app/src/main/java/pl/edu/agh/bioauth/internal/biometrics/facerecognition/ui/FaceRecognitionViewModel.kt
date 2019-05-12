@@ -90,6 +90,6 @@ internal class FaceRecognitionViewModel : BaseViewModel() {
     }
 
     companion object {
-        private const val PHOTOS_REQUIRED_NUMBER = 3
+        private const val PHOTOS_REQUIRED_NUMBER = 7
     }
 }
