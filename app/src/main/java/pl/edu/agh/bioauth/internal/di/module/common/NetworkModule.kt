@@ -14,8 +14,11 @@ import pl.edu.agh.bioauth.internal.network.service.EncryptionService
 import pl.edu.agh.bioauth.internal.network.service.StatisticsService
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 internal class NetworkModule : AbstractModule() {
+
+    private val httpSecondsTimeout: Long = 60
 
     private val httpLoggingInterceptor: HttpLoggingInterceptor
         get() = HttpLoggingInterceptor(HttpLoggingInterceptor.Logger { message ->
@@ -35,6 +38,9 @@ internal class NetworkModule : AbstractModule() {
             if (BuildConfig.DEBUG) {
                 addInterceptor(httpLoggingInterceptor)
             }
+            writeTimeout(httpSecondsTimeout, TimeUnit.SECONDS)
+            readTimeout(httpSecondsTimeout, TimeUnit.SECONDS)
+            connectTimeout(httpSecondsTimeout, TimeUnit.SECONDS)
         }.build()
 
     private val retrofit: Retrofit
