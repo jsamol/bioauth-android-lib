@@ -19,7 +19,7 @@ internal class PhotoProcessor(private val livenessDetector: PhotoLivenessDetecto
         val markedPhotos = when (livenessMode) {
             MOBILE -> {
                 if (livenessDetector.testLiveness(photos)) {
-                    markPhotosLivenessStatus(photos, true)
+                    markPhotosLivenessStatus(photos, true).takeLast(2)
                 } else {
                     ErrorUtil.failWithLivenessTestFailed()
                 }
