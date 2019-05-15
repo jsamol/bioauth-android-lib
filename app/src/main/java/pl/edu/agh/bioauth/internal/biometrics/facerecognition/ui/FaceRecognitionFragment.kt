@@ -420,7 +420,11 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
 
     private fun processCaptureResult(captureResult: CaptureResult) {
         when (viewModel.cameraCaptureState) {
-            PREVIEW -> Unit
+            PREVIEW -> {
+                if (captureResult.frameNumber > MIN_PREVIEW_FRAMES_TO_WAIT) {
+                    viewModel.cameraCaptureState = FACE_DETECTION
+                }
+            }
             FACE_DETECTION -> {
                 val mode = captureResult.get(CaptureResult.STATISTICS_FACE_DETECT_MODE)
                 val faces = captureResult.get(CaptureResult.STATISTICS_FACES)
@@ -527,13 +531,10 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
                         val orientation = orientation[rotation] ?: ErrorUtil.failWithCameraError()
                         set(CaptureRequest.JPEG_ORIENTATION, (orientation + sensorOrientation + 270) % 360)
                         set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-                        set(CaptureRequest.EDGE_MODE, CaptureRequest.EDGE_MODE_OFF)
+                        set(CaptureRequest.EDGE_MODE, CaptureRequest.EDGE_MODE_FAST)
                         set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_ON)
-                        set(CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE, CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE_OFF)
+                        set(CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE, CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE_FAST)
                         set(CaptureRequest.NOISE_REDUCTION_MODE, CaptureRequest.NOISE_REDUCTION_MODE_FAST)
-                        set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_CANCEL)
-                        set(CaptureRequest.CONTROL_AE_LOCK, true)
-                        set(CaptureRequest.CONTROL_AWB_LOCK, true)
                     } ?: ErrorUtil.failWithCameraError()
 
             val captureRequests = mutableListOf<CaptureRequest>()
@@ -585,7 +586,7 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
                 set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL)
                 captureSession?.capture(build(), precaptureCallback, backgroundHandler)
             }
-            viewModel.cameraCaptureState = PREVIEW
+            viewModel.cameraCaptureState = PICTURE_TAKEN
             previewRequest?.let { captureSession?.setRepeatingRequest(it, precaptureCallback, backgroundHandler) }
         } catch (e: CameraAccessException) {
             ErrorUtil.failWithCameraError(viewModel::onCameraError)
@@ -602,6 +603,8 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
 
         private const val MAX_CAPTURE_WIDTH = 640
         private const val MAX_CAPTURE_HEIGHT = 480
+
+        private const val MIN_PREVIEW_FRAMES_TO_WAIT = 25
 
         private const val CAMERA_LOCK_TIMEOUT = 2500L
     }
