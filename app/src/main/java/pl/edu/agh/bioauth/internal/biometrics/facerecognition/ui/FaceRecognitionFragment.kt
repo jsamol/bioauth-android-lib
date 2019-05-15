@@ -101,6 +101,13 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
     private val isLandscapeOrientation: Boolean
         get() = (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
 
+    private val orientation: Map<Int, Int> = mapOf(
+        Surface.ROTATION_0 to 90,
+        Surface.ROTATION_90 to 0,
+        Surface.ROTATION_180 to 270,
+        Surface.ROTATION_270 to 180
+    )
+
     override fun onResume() {
         super.onResume()
         if (viewModel.method != null) {
@@ -214,9 +221,9 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
 
         captureSession = session
         try {
-            previewRequestBuilder?.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, CameraMetadata.STATISTICS_FACE_DETECT_MODE_FULL)
-            previewRequest = previewRequestBuilder?.build()?.also {
-                captureSession?.setRepeatingRequest(it, precaptureCallback, backgroundHandler)
+            previewRequestBuilder?.run {
+                set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, CameraMetadata.STATISTICS_FACE_DETECT_MODE_SIMPLE)
+                previewRequest = build().also { captureSession?.setRepeatingRequest(it, precaptureCallback, backgroundHandler) }
             }
         } catch (e: CameraAccessException) {
             ErrorUtil.failWithCameraError(viewModel::onCameraError, e)
@@ -272,7 +279,6 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
         with (viewModel) {
             if (hasNotEnoughPhotos) {
                 currentPhoto = FileUtil.createTempFile(biometricsType)
-                cameraCaptureState = FACE_DETECTION
             } else {
                 processPhotos()
             }
@@ -414,7 +420,11 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
 
     private fun processCaptureResult(captureResult: CaptureResult) {
         when (viewModel.cameraCaptureState) {
-            PREVIEW -> Unit
+            PREVIEW -> {
+                if (captureResult.frameNumber > MIN_PREVIEW_FRAMES_TO_WAIT) {
+                    viewModel.cameraCaptureState = FACE_DETECTION
+                }
+            }
             FACE_DETECTION -> {
                 val mode = captureResult.get(CaptureResult.STATISTICS_FACE_DETECT_MODE)
                 val faces = captureResult.get(CaptureResult.STATISTICS_FACES)
@@ -423,7 +433,7 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
                     takePhotoIfFaceInRightPosition(faces[0])
                 }
             }
-            WAITING_LOCK -> capturePicture(captureResult)
+            WAITING_LOCK -> capturePictures(captureResult)
             WAITING_PRECAPTURE -> {
                 val aeState = captureResult.get(CaptureResult.CONTROL_AE_STATE)
                 if (aeState == null ||
@@ -436,7 +446,7 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
                 val aeState = captureResult.get(CaptureResult.CONTROL_AE_STATE)
                 if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
                     viewModel.cameraCaptureState = PICTURE_TAKEN
-                    captureStillPicture()
+                    captureStillPictures()
                 }
             }
             PICTURE_TAKEN -> Unit
@@ -492,14 +502,14 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
     private fun getScaleFactor(overlayDimen: Float, previewDimen: Int?): Float =
         overlayDimen / (previewDimen?.toFloat() ?: overlayDimen)
 
-    private fun capturePicture(captureResult: CaptureResult) {
+    private fun capturePictures(captureResult: CaptureResult) {
         when (captureResult.get(CaptureResult.CONTROL_AF_STATE)) {
-            null -> captureStillPicture()
+            null -> captureStillPictures()
             CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED, CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED -> {
                 val aeState = captureResult.get(CaptureResult.CONTROL_AE_STATE)
                 if (aeState == null || aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
                     viewModel.cameraCaptureState = PICTURE_TAKEN
-                    captureStillPicture()
+                    captureStillPictures()
                 } else {
                     runPrecaptureSequence()
                 }
@@ -508,30 +518,35 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
     }
 
     @Throws(CameraException::class)
-    private fun captureStillPicture() {
+    private fun captureStillPictures() {
         try {
             val rotation = activity?.windowManager?.defaultDisplay?.rotation ?: ErrorUtil.failWithCameraError()
+            val captureTarget = imageReader?.surface ?: ErrorUtil.failWithCameraError()
             val captureBuilder =
                 cameraDevice
                     ?.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
                     ?.apply {
-                        imageReader?.surface?.let { addTarget(it) }
+                        addTarget(captureTarget)
 
-                        val orientation = when (rotation) {
-                            Surface.ROTATION_0 -> 90
-                            Surface.ROTATION_90 -> 0
-                            Surface.ROTATION_180 -> 270
-                            Surface.ROTATION_270 -> 180
-                            else -> ErrorUtil.failWithCameraError()
-                        }
-
+                        val orientation = orientation[rotation] ?: ErrorUtil.failWithCameraError()
                         set(CaptureRequest.JPEG_ORIENTATION, (orientation + sensorOrientation + 270) % 360)
                         set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-                    }
+                        set(CaptureRequest.EDGE_MODE, CaptureRequest.EDGE_MODE_FAST)
+                        set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_ON)
+                        set(CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE, CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE_FAST)
+                        set(CaptureRequest.NOISE_REDUCTION_MODE, CaptureRequest.NOISE_REDUCTION_MODE_FAST)
+                    } ?: ErrorUtil.failWithCameraError()
+
+            val captureRequests = mutableListOf<CaptureRequest>()
+            for (i in 0 until FaceRecognitionViewModel.PHOTOS_REQUIRED_NUMBER) {
+                captureRequests.add(captureBuilder.build())
+            }
+
             captureSession?.run {
                 stopRepeating()
                 abortCaptures()
-                captureBuilder?.let { capture(it.build(), captureCallback, null) }
+                captureBurst(captureRequests, captureCallback, null)
+                captureBuilder.removeTarget(captureTarget)
             }
         } catch (e: CameraAccessException) {
             ErrorUtil.failWithCameraError(viewModel::onCameraError, e)
@@ -571,7 +586,7 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
                 set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL)
                 captureSession?.capture(build(), precaptureCallback, backgroundHandler)
             }
-            viewModel.cameraCaptureState = PREVIEW
+            viewModel.cameraCaptureState = PICTURE_TAKEN
             previewRequest?.let { captureSession?.setRepeatingRequest(it, precaptureCallback, backgroundHandler) }
         } catch (e: CameraAccessException) {
             ErrorUtil.failWithCameraError(viewModel::onCameraError)
@@ -581,13 +596,15 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
     companion object {
         private const val CAMERA_BACKGROUND_THREAD_NAME = "CameraBackgroundThread"
 
-        private const val MAX_IMAGE_READER_IMAGES = 1
+        private const val MAX_IMAGE_READER_IMAGES = 2
 
         private const val MAX_PREVIEW_WIDTH = 1920
         private const val MAX_PREVIEW_HEIGHT = 1080
 
         private const val MAX_CAPTURE_WIDTH = 640
         private const val MAX_CAPTURE_HEIGHT = 480
+
+        private const val MIN_PREVIEW_FRAMES_TO_WAIT = 25
 
         private const val CAMERA_LOCK_TIMEOUT = 2500L
     }
