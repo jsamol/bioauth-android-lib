@@ -11,7 +11,7 @@ import pl.edu.agh.bioauth.internal.biometrics.common.type.BiometricsType
 import pl.edu.agh.bioauth.internal.biometrics.common.type.MethodType
 import pl.edu.agh.bioauth.internal.biometrics.common.type.RegistrationMethod
 import pl.edu.agh.bioauth.internal.biometrics.facerecognition.CameraCaptureState
-import pl.edu.agh.bioauth.internal.biometrics.facerecognition.CameraCaptureState.FACE_DETECTION
+import pl.edu.agh.bioauth.internal.biometrics.facerecognition.CameraCaptureState.PREVIEW
 import pl.edu.agh.bioauth.internal.network.ApiController
 import pl.edu.agh.bioauth.internal.network.callback.AuthenticationCallback
 import pl.edu.agh.bioauth.internal.network.callback.RegistrationCallback
@@ -40,7 +40,7 @@ internal class FaceRecognitionViewModel : BaseViewModel() {
             }
         }
 
-    var cameraCaptureState: CameraCaptureState = FACE_DETECTION
+    var cameraCaptureState: CameraCaptureState = PREVIEW
 
     private val apiController: ApiController by inject()
 
@@ -93,6 +93,6 @@ internal class FaceRecognitionViewModel : BaseViewModel() {
     }
 
     companion object {
-        private const val PHOTOS_REQUIRED_NUMBER = 7
+        const val PHOTOS_REQUIRED_NUMBER = 21
     }
 }
