@@ -214,7 +214,7 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
 
         captureSession = session
         try {
-            previewRequestBuilder?.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, CameraMetadata.STATISTICS_FACE_DETECT_MODE_FULL)
+            previewRequestBuilder?.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, CameraMetadata.STATISTICS_FACE_DETECT_MODE_SIMPLE)
             previewRequest = previewRequestBuilder?.build()?.also {
                 captureSession?.setRepeatingRequest(it, precaptureCallback, backgroundHandler)
             }
