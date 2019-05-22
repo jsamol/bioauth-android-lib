@@ -1,31 +1,27 @@
-package pl.edu.agh.bioauth.internal.biometrics.common.photo
+package pl.edu.agh.bioauth.internal.biometrics.common.preprocess.photo
 
-import pl.edu.agh.bioauth.auth.LivenessMode
 import pl.edu.agh.bioauth.auth.LivenessMode.*
 import pl.edu.agh.bioauth.internal.biometrics.common.exception.LivenessException
-import pl.edu.agh.bioauth.internal.biometrics.common.photo.liveness.PhotoLivenessDetector
-import pl.edu.agh.bioauth.internal.biometrics.common.type.BiometricsType
+import pl.edu.agh.bioauth.internal.biometrics.common.preprocess.SamplesProcessor
+import pl.edu.agh.bioauth.internal.biometrics.common.preprocess.photo.liveness.PhotoLivenessDetector
 import pl.edu.agh.bioauth.internal.util.ErrorUtil
 import pl.edu.agh.bioauth.internal.util.FileUtil
 import java.io.File
 
-internal class PhotoProcessor(private val livenessDetector: PhotoLivenessDetector) {
-
-    lateinit var biometricsType: BiometricsType
-    lateinit var livenessMode: LivenessMode
+internal class PhotoProcessor(livenessDetector: PhotoLivenessDetector) : SamplesProcessor<PhotoLivenessDetector>(livenessDetector) {
 
     @Throws(LivenessException::class)
-    fun preprocessPhotos(photos: List<File>): List<File> {
+    override fun preprocessSamples(samples: List<File>): List<File> {
         val markedPhotos = when (livenessMode) {
             MOBILE -> {
-                if (livenessDetector.testLiveness(photos)) {
-                    markPhotosLivenessStatus(photos, true).takeLast(2)
+                if (livenessDetector.testLiveness(samples)) {
+                    markPhotosLivenessStatus(samples, true).takeLast(2)
                 } else {
                     ErrorUtil.failWithLivenessTestFailed()
                 }
             }
-            SERVER -> markPhotosLivenessStatus(photos, null)
-            MACHINE_LEARNING -> markPhotosLivenessStatus(photos, null)
+            SERVER -> markPhotosLivenessStatus(samples, null)
+            MACHINE_LEARNING -> markPhotosLivenessStatus(samples, null)
         }
         return markedPhotos
     }

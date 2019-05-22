@@ -5,7 +5,7 @@ import pl.edu.agh.bioauth.exception.CameraException
 import pl.edu.agh.bioauth.exception.RegistrationException
 import pl.edu.agh.bioauth.internal.base.BaseViewModel
 import pl.edu.agh.bioauth.internal.biometrics.common.exception.LivenessException
-import pl.edu.agh.bioauth.internal.biometrics.common.photo.PhotoProcessor
+import pl.edu.agh.bioauth.internal.biometrics.common.preprocess.photo.PhotoProcessor
 import pl.edu.agh.bioauth.internal.biometrics.common.type.AuthenticationMethod
 import pl.edu.agh.bioauth.internal.biometrics.common.type.BiometricsType
 import pl.edu.agh.bioauth.internal.biometrics.common.type.MethodType
@@ -57,7 +57,7 @@ internal class FaceRecognitionViewModel : BaseViewModel() {
     fun processPhotos() {
         method?.let {
             try {
-                val processedPhotos = photoProcessor.preprocessPhotos(photos)
+                val processedPhotos = photoProcessor.preprocessSamples(photos)
                 when (it) {
                     is RegistrationMethod -> registerPhotos(it.userId, processedPhotos)
                     is AuthenticationMethod -> authenticatePhotos(it.userId, processedPhotos)

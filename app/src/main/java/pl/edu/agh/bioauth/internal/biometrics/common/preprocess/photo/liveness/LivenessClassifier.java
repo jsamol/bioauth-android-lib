@@ -1,4 +1,4 @@
-package pl.edu.agh.bioauth.internal.biometrics.common.photo.liveness;
+package pl.edu.agh.bioauth.internal.biometrics.common.preprocess.photo.liveness;
 
 class LivenessClassifier {
     public static int predict_0(double[] features) {
