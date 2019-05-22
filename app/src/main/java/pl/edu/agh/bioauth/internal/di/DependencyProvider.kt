@@ -14,6 +14,7 @@ import pl.edu.agh.bioauth.internal.util.ErrorUtil
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
+import kotlin.reflect.KType
 import kotlin.reflect.full.findAnnotation
 
 @Provider(components = [AppComponent::class, FaceRecognitionFragmentComponent::class])
@@ -61,7 +62,7 @@ internal object DependencyProvider {
         targetMap?.get()?.remove(target)
     }
 
-    fun <R, T> inject(init: (T.() -> Unit)? = null): ReadOnlyProperty<R, T> = object : ReadOnlyProperty<R, T> {
+    fun <R, T> inject(kType: KType? = null, init: (T.() -> Unit)? = null): ReadOnlyProperty<R, T> = object : ReadOnlyProperty<R, T> {
         override fun getValue(thisRef: R, property: KProperty<*>): T {
             val appDependencies = appComponent?.dependencies ?: emptyMap()
             val dependencies = when (thisRef) {
@@ -81,7 +82,10 @@ internal object DependencyProvider {
                 else -> appDependencies
             }
 
-            val injectableProperties = dependencies[property.returnType] ?: ErrorUtil.failWithUnknownInjectingType()
+            val injectableProperties =
+                dependencies[property.returnType]
+                    ?: dependencies[kType]
+                    ?: ErrorUtil.failWithUnknownInjectingType()
 
             val propertyName = property.findAnnotation<Named>()?.value
 

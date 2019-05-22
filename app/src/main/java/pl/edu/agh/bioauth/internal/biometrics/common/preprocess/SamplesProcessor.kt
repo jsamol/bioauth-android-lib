@@ -11,7 +11,7 @@ internal abstract class SamplesProcessor<T: LivenessDetector>(protected val live
     lateinit var biometricsType: BiometricsType
     lateinit var livenessMode: LivenessMode
 
-    abstract fun preprocessSamples(samples: List<File>): List<File>
+    abstract fun preprocess(samples: List<File>): List<File>
 
     protected fun setupLivenessTest(samples: List<File>): List<File> =
         when (livenessMode) {

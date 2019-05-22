@@ -11,7 +11,7 @@ import java.io.File
 internal class PhotoProcessor(livenessDetector: PhotoLivenessDetector) : SamplesProcessor<PhotoLivenessDetector>(livenessDetector) {
 
     @Throws(LivenessException::class)
-    override fun preprocessSamples(samples: List<File>): List<File> {
+    override fun preprocess(samples: List<File>): List<File> {
         val markedPhotos = when (livenessMode) {
             MOBILE -> {
                 if (livenessDetector.testLiveness(samples)) {
