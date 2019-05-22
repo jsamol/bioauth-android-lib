@@ -11,7 +11,6 @@ import pl.edu.agh.bioauth.internal.network.ApiController
 import pl.edu.agh.bioauth.internal.network.callback.VoidCallback
 import pl.edu.agh.bioauth.internal.network.service.AuthenticationService
 import pl.edu.agh.bioauth.internal.network.service.EncryptionService
-import pl.edu.agh.bioauth.internal.network.service.StatisticsService
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
@@ -56,11 +55,8 @@ internal class NetworkModule : AbstractModule() {
     private val encryptionService: EncryptionService
         get() = retrofit.create(EncryptionService::class.java)
 
-    private val statisticsService: StatisticsService
-        get() = retrofit.create(StatisticsService::class.java)
-
     val apiController: ApiController
-        get() = ApiController(authenticationService, encryptionService, statisticsService)
+        get() = ApiController(authenticationService, encryptionService)
 
     val voidCallback: VoidCallback
         get() = VoidCallback()

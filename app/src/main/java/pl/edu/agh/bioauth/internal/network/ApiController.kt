@@ -6,22 +6,18 @@ import pl.edu.agh.bioauth.BioAuth
 import pl.edu.agh.bioauth.exception.SdkUninitializedException
 import pl.edu.agh.bioauth.internal.biometrics.common.type.BiometricsType
 import pl.edu.agh.bioauth.internal.data.AppCredentials
-import pl.edu.agh.bioauth.internal.network.model.request.StatsRequest
 import pl.edu.agh.bioauth.internal.network.model.response.AuthenticateResponse
 import pl.edu.agh.bioauth.internal.network.model.response.RegisterResponse
 import pl.edu.agh.bioauth.internal.network.model.response.SymmetricKeyResponse
 import pl.edu.agh.bioauth.internal.network.service.AuthenticationService
 import pl.edu.agh.bioauth.internal.network.service.EncryptionService
-import pl.edu.agh.bioauth.internal.network.service.StatisticsService
 import pl.edu.agh.bioauth.internal.util.ErrorUtil
-import pl.edu.agh.bioauth.stats.data.StatsData
 import retrofit2.Call
 import java.io.File
 
 internal class ApiController(
     private val authenticationService: AuthenticationService,
-    private val encryptionService: EncryptionService,
-    private val statisticsService: StatisticsService
+    private val encryptionService: EncryptionService
 ) {
 
     @get:Throws(SdkUninitializedException::class)
@@ -60,24 +56,6 @@ internal class ApiController(
     fun getEncryptionKey(publicKey: String): Call<SymmetricKeyResponse> {
         with(appCredentials) {
             return encryptionService.getSymmetricnKey(appId, appSecret, publicKey)
-        }
-    }
-
-    fun uploadStatistics(statsData: StatsData): Call<Void> {
-        with (appCredentials) {
-            val batteryLevel = statsData.initialData.batteryData.batteryLevel
-            val isCharging = statsData.initialData.batteryData.isCharging
-            val chargeType = statsData.initialData.batteryData.chargeType
-            val connectionType = statsData.initialData.connectionType
-            val availableMemory = statsData.initialData.memoryData.availableMemory
-            val lowMemory = statsData.initialData.memoryData.lowMemory
-            val batteryDrain = statsData.batteryDrain
-            val executionTime = statsData.executionTime
-
-            val request = StatsRequest(appId, appSecret, batteryLevel, isCharging, chargeType,
-                connectionType, availableMemory, lowMemory, batteryDrain, executionTime)
-
-            return statisticsService.uploadStatistics(request)
         }
     }
 
