@@ -1,26 +1,17 @@
 package pl.edu.agh.bioauth.internal.base
 
 import androidx.lifecycle.ViewModel
-import pl.edu.agh.bioauth.exception.AuthenticationException
-import pl.edu.agh.bioauth.exception.RegistrationException
+import pl.edu.agh.bioauth.internal.base.controller.BiometricMethodController
 import pl.edu.agh.bioauth.internal.biometrics.common.exception.LivenessException
 import pl.edu.agh.bioauth.internal.biometrics.common.preprocess.SamplesProcessor
-import pl.edu.agh.bioauth.internal.biometrics.common.type.AuthenticationMethod
 import pl.edu.agh.bioauth.internal.biometrics.common.type.BiometricsType
 import pl.edu.agh.bioauth.internal.biometrics.common.type.MethodType
-import pl.edu.agh.bioauth.internal.biometrics.common.type.RegistrationMethod
 import pl.edu.agh.bioauth.internal.di.Injectable
-import pl.edu.agh.bioauth.internal.network.ApiController
-import pl.edu.agh.bioauth.internal.network.callback.AuthenticationCallback
-import pl.edu.agh.bioauth.internal.network.callback.RegistrationCallback
 import pl.edu.agh.bioauth.internal.util.ErrorUtil
 import pl.edu.agh.bioauth.internal.util.FileUtil
-import pl.edu.agh.bioauth.internal.util.SecurityUtil
 import java.io.File
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KClass
-import kotlin.reflect.KType
-import kotlin.reflect.full.createType
 
 internal abstract class BaseViewModel<T: SamplesProcessor<*>>(processorType: KClass<T>) : ViewModel(), Injectable {
 
@@ -29,27 +20,17 @@ internal abstract class BaseViewModel<T: SamplesProcessor<*>>(processorType: KCl
     var method: MethodType<*>? = null
         set(value) {
             field = value
-            value?.let {
-                samplesProcessor.livenessMode = it.livenessMode
-                when (it) {
-                    is RegistrationMethod -> registrationCallback.listener = it.listener
-                    is AuthenticationMethod -> authenticationCallback.listener = it.listener
-                }
-            }
+            value?.run { samplesProcessor.livenessMode = livenessMode }
         }
 
     var isInitialized: Boolean = false
         private set
 
-    private val apiController: ApiController by inject()
-    private val securityUtil: SecurityUtil by inject()
-
-    private val samplesProcessor: T by inject(processorType.createType()) {
+    private val samplesProcessor: T by inject(processorType) {
         biometricsType = this@BaseViewModel.biometricsType
     }
 
-    private val registrationCallback: RegistrationCallback by inject()
-    private val authenticationCallback: AuthenticationCallback by inject()
+    private val methodController: BiometricMethodController<*, *, *>? by factory({ method })
 
     override fun onCleared() {
         FileUtil.deleteTempFiles(biometricsType)
@@ -57,43 +38,27 @@ internal abstract class BaseViewModel<T: SamplesProcessor<*>>(processorType: KCl
         super.onCleared()
     }
 
-    final override fun <R, T> inject(kType: KType?, init: (T.() -> Unit)?): ReadOnlyProperty<R, T> {
-        return super.inject(kType, init)
+    final override fun <R, T : Any> inject(kClass: KClass<T>?, init: T.() -> Unit): ReadOnlyProperty<R, T> {
+        return super.inject(kClass, init)
     }
 
-    protected fun processSamples(samples: List<File>) {
-        method?.let {
-            try {
-                val processedPhotos = samplesProcessor.preprocess(samples)
-                when (it) {
-                    is RegistrationMethod -> registerSamples(it.userId, processedPhotos)
-                    is AuthenticationMethod -> authenticate(it.userId, processedPhotos)
-                }
-            } catch (e: LivenessException) {
-                val exception = when (it) {
-                    is RegistrationMethod -> RegistrationException(e.message)
-                    is AuthenticationMethod -> AuthenticationException(e.message)
-                }
-                it.listener.onFailure(exception)
-            }
-        } ?: ErrorUtil.failWithIllegalState()
-    }
-
-    private fun registerSamples(userId: String, samples: List<File>) {
-        apiController
-            .registerSamples(userId, samples, biometricsType)
-            .enqueue(registrationCallback)
-    }
-
-    private fun authenticate(userId: String?, samples: List<File>) {
-        val challenge = securityUtil.challenge
-        apiController
-            .authenticate(userId, samples, challenge, biometricsType)
-            .enqueue(authenticationCallback.also { it.challenge = challenge })
+    final override fun <R, T : Any, S> factory(selector: () -> S?, init: T.() -> Unit): ReadOnlyProperty<R, T?> {
+        return super.factory(selector, init)
     }
 
     fun onInitialized() {
         initDependencies()
         isInitialized = true
+    }
+
+    protected fun processSamples(samples: List<File>) {
+        methodController?.let {
+            try {
+                val processedSamples = samplesProcessor.preprocess(samples)
+                it.run(processedSamples)
+            } catch (e: LivenessException) {
+                it.onFailure(e.message)
+            }
+        } ?: ErrorUtil.failWithIllegalState()
     }
 }
