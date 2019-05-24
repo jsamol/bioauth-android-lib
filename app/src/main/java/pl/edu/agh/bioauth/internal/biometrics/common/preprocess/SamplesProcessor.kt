@@ -7,7 +7,7 @@ import pl.edu.agh.bioauth.internal.util.ErrorUtil
 import pl.edu.agh.bioauth.internal.util.FileUtil
 import java.io.File
 
-internal abstract class SamplesProcessor<T: LivenessDetector>(protected val livenessDetector: T) {
+internal abstract class SamplesProcessor<T: LivenessDetector>(private val livenessDetector: T) {
     lateinit var biometricsType: BiometricsType
     lateinit var livenessMode: LivenessMode
 
