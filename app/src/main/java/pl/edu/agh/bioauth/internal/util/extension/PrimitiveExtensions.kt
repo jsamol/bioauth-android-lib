@@ -16,3 +16,5 @@ internal fun Float.round(decimalPlaces: Int): Float {
 
     return round(this * factor) / factor
 }
+
+internal fun Boolean.toInt(): Int = if (this) 1 else 0

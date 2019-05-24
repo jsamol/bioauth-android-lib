@@ -15,7 +15,9 @@ import pl.edu.agh.bioauth.exception.SdkUninitializedException
 import pl.edu.agh.bioauth.internal.biometrics.common.preprocess.LivenessDetector
 import pl.edu.agh.bioauth.internal.util.ErrorUtil
 import pl.edu.agh.bioauth.internal.util.FileUtil
+import pl.edu.agh.bioauth.internal.util.Logger
 import pl.edu.agh.bioauth.internal.util.extension.median
+import pl.edu.agh.bioauth.internal.util.extension.toInt
 import pl.edu.agh.bioauth.internal.util.type.FileType
 import java.io.File
 
@@ -62,8 +64,8 @@ internal class PhotoLivenessDetector : LivenessDetector() {
                         .flatten()
                         .toDoubleArray()
 
-                    val prediction = LivenessClassifier.predict(featureVector)
-                    measures[index].add(prediction)
+                    val probability = LivenessClassifier.predict_proba(featureVector)[1]
+                    measures[index].add((probability >= EPSILON).toInt())
                 }
 
                 sampleVotes.add(measures[index].median() ?: -1)
@@ -101,6 +103,8 @@ internal class PhotoLivenessDetector : LivenessDetector() {
     }
 
     companion object {
+        private const val EPSILON = 0.7
+
         init {
             System.loadLibrary("opencv_java3")
         }
