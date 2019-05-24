@@ -21,3 +21,5 @@ internal fun <K, I: Iterable<T>, T> List<Map<K, I>>.flattenMapList(): Map<K, Lis
         .flatMap { it.asSequence() }
         .groupBy({ it.key }, { it.value })
         .mapValues { it.value.flatten() }
+
+internal fun <T> List<T>.takeHalf(): List<T> = shuffled().take(size / 2)

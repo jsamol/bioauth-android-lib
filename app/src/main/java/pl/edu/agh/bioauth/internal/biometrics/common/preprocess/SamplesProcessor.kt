@@ -5,6 +5,7 @@ import pl.edu.agh.bioauth.auth.LivenessMode.*
 import pl.edu.agh.bioauth.internal.biometrics.common.type.BiometricsType
 import pl.edu.agh.bioauth.internal.util.ErrorUtil
 import pl.edu.agh.bioauth.internal.util.FileUtil
+import pl.edu.agh.bioauth.internal.util.extension.takeHalf
 import java.io.File
 
 internal abstract class SamplesProcessor<T: LivenessDetector>(private val livenessDetector: T) {
@@ -17,7 +18,7 @@ internal abstract class SamplesProcessor<T: LivenessDetector>(private val livene
         when (livenessMode) {
             MOBILE -> {
                 if (livenessDetector.testLiveness(samples)) {
-                    markFilesLivenessStatus(samples, true).takeLast(2)
+                    markFilesLivenessStatus(samples.takeHalf(), true)
                 } else {
                     ErrorUtil.failWithLivenessTestFailed()
                 }
