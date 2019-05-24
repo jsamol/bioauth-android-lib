@@ -28,6 +28,6 @@ internal class FaceRecognitionViewModel : BaseViewModel<PhotoProcessor>(PhotoPro
     }
 
     companion object {
-        const val PHOTOS_REQUIRED_NUMBER = 11
+        const val PHOTOS_REQUIRED_NUMBER = 5
     }
 }
