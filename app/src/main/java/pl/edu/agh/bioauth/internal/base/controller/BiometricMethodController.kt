@@ -55,10 +55,9 @@ internal abstract class BiometricMethodController<C: ResultCallback<*, L, E>, L:
             } })
     }
 
-    private fun encryptSamples(samples: List<File>, key: SecretKey, iv: ByteArray): List<File> {
-        return samples.map {
+    private fun encryptSamples(samples: List<File>, key: SecretKey, iv: ByteArray): List<File> =
+        samples.map {
             val bytes = securityUtil.encryptData(it.readBytes(), key, iv)
             FileUtil.createEncryptedFile(bytes, it.parent, it.name)
         }
-    }
 }
