@@ -8,6 +8,7 @@ import pl.edu.agh.bioauth.internal.di.factory.common.BiometricMethodControllerFa
 import pl.edu.agh.bioauth.internal.di.module.AbstractModule
 import pl.edu.agh.bioauth.internal.network.callback.AuthenticationCallback
 import pl.edu.agh.bioauth.internal.network.callback.RegistrationCallback
+import pl.edu.agh.bioauth.internal.network.callback.SymmetricKeyCallback
 
 internal class FaceRecognitionViewModelModule : AbstractModule() {
 
@@ -22,9 +23,12 @@ internal class FaceRecognitionViewModelModule : AbstractModule() {
     private val authenticationCallback: AuthenticationCallback
         get() = AuthenticationCallback(biometricsType, gson)
 
+    private val symmetricKeyCallback: SymmetricKeyCallback
+        get() = SymmetricKeyCallback()
+
     val biometricsType: BiometricsType = BiometricsType.FACE
 
     @Factory
     val methodControllerFactory: BiometricMethodControllerFactory
-        get() = BiometricMethodControllerFactory(biometricsType, registrationCallback, authenticationCallback)
+        get() = BiometricMethodControllerFactory(biometricsType, registrationCallback, authenticationCallback, symmetricKeyCallback)
 }

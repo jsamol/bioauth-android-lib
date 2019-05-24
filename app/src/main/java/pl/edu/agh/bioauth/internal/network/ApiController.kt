@@ -24,31 +24,48 @@ internal class ApiController(
     private val appCredentials: AppCredentials
         get() = BioAuth.instance?.appCredentials ?: ErrorUtil.failWithSdkUninitialized()
 
-    fun registerSamples(userId: String, photos: List<File>, biometricsType: BiometricsType): Call<RegisterResponse> {
+    fun registerSamples(userId: String, samples: List<File>, keyId: String, biometricsType: BiometricsType): Call<RegisterResponse> {
         with (appCredentials) {
-            val samples = createMultipartBodyParts(photos, MULTIPART_PARAM_SAMPLES, biometricsType)
+            val samplesParam = createMultipartBodyParts(samples, MULTIPART_PARAM_SAMPLES, biometricsType)
             val appIdParam = createMultipartBodyPart(appId, MULTIPART_PARAM_APP_ID)
             val appSecretParam = createMultipartBodyPart(appSecret, MULTIPART_PARAM_APP_SECRET)
             val userIdParam = createMultipartBodyPart(userId, MULTIPART_PARAM_USER_ID)
+            val keyIdParam = createMultipartBodyPart(keyId, MULTIPART_PARAM_KEY_ID)
 
-            return authenticationService.register(biometricsType.methodName, samples, appIdParam, appSecretParam, userIdParam)
+            return authenticationService.register(
+                biometricsType.methodName,
+                samplesParam,
+                appIdParam,
+                appSecretParam,
+                userIdParam,
+                keyIdParam
+            )
         }
     }
 
-    fun authenticate(userId: String?, photos: List<File>, challenge: String, biometricsType: BiometricsType): Call<AuthenticateResponse> {
+    fun authenticate(
+        userId: String?,
+        samples: List<File>,
+        challenge: String,
+        keyId: String,
+        biometricsType: BiometricsType
+    ): Call<AuthenticateResponse> {
         with (appCredentials) {
-            val samples = createMultipartBodyParts(photos, MULTIPART_PARAM_SAMPLES, biometricsType)
+            val samplesParam = createMultipartBodyParts(samples, MULTIPART_PARAM_SAMPLES, biometricsType)
             val appIdParam = createMultipartBodyPart(appId, MULTIPART_PARAM_APP_ID)
             val appSecretParam = createMultipartBodyPart(appSecret, MULTIPART_PARAM_APP_SECRET)
             val challengeParam = createMultipartBodyPart(challenge, MULTIPART_PARAM_CHALLENGE)
             val userIdParam = userId?.let { createMultipartBodyPart(it, MULTIPART_PARAM_USER_ID) }
+            val keyIdParam = createMultipartBodyPart(keyId, MULTIPART_PARAM_KEY_ID)
 
             return authenticationService.authenticate(
                 biometricsType.methodName,
-                samples, appIdParam,
+                samplesParam,
+                appIdParam,
                 appSecretParam,
                 challengeParam,
-                userIdParam
+                userIdParam,
+                keyIdParam
             )
         }
     }
@@ -78,5 +95,6 @@ internal class ApiController(
         private const val MULTIPART_PARAM_APP_SECRET = "appSecret"
         private const val MULTIPART_PARAM_USER_ID = "userId"
         private const val MULTIPART_PARAM_CHALLENGE = "challenge"
+        private const val MULTIPART_PARAM_KEY_ID = "keyId"
     }
 }

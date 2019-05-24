@@ -11,12 +11,14 @@ import pl.edu.agh.bioauth.internal.di.annotation.FactoryReturn
 import pl.edu.agh.bioauth.internal.di.factory.AbstractFactory
 import pl.edu.agh.bioauth.internal.network.callback.AuthenticationCallback
 import pl.edu.agh.bioauth.internal.network.callback.RegistrationCallback
+import pl.edu.agh.bioauth.internal.network.callback.SymmetricKeyCallback
 
 @FactoryReturn(BiometricMethodController::class)
 internal class BiometricMethodControllerFactory(
     private val biometricsType: BiometricsType,
     private val registrationCallback: RegistrationCallback,
-    private val authenticationCallback: AuthenticationCallback
+    private val authenticationCallback: AuthenticationCallback,
+    private val symmetricKeyCallback: SymmetricKeyCallback
 ) : AbstractFactory<MethodType<*>, BiometricMethodController<*, *, *>>() {
 
     override fun create(selector: MethodType<*>): BiometricMethodController<*, *, *> =
@@ -25,12 +27,14 @@ internal class BiometricMethodControllerFactory(
                 is RegistrationMethod -> RegistrationController(
                     biometricsType,
                     registrationCallback.also { it.listener = listener },
+                    symmetricKeyCallback,
                     listener,
                     userId
                 )
                 is AuthenticationMethod -> AuthenticationController(
                     biometricsType,
                     authenticationCallback.also { it.listener = listener },
+                    symmetricKeyCallback,
                     listener,
                     userId
                 )

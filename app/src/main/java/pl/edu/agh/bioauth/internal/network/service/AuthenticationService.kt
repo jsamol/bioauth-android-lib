@@ -19,7 +19,8 @@ interface AuthenticationService {
         @Part samples: Array<MultipartBody.Part>,
         @Part appId: MultipartBody.Part,
         @Part appSecret: MultipartBody.Part,
-        @Part userId: MultipartBody.Part
+        @Part userId: MultipartBody.Part,
+        @Part keyId: MultipartBody.Part
     ): Call<RegisterResponse>
 
     @Multipart
@@ -30,6 +31,7 @@ interface AuthenticationService {
         @Part appId: MultipartBody.Part,
         @Part appSecret: MultipartBody.Part,
         @Part challenge: MultipartBody.Part,
-        @Part userId: MultipartBody.Part?
+        @Part userId: MultipartBody.Part?,
+        @Part keyId: MultipartBody.Part
     ): Call<AuthenticateResponse>
 }
