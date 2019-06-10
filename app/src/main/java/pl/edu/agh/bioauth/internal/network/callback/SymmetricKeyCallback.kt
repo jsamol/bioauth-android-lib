@@ -10,7 +10,7 @@ internal class SymmetricKeyCallback : Callback<SymmetricKeyResponse> {
     lateinit var onSuccess: (String, String, String) -> Unit
 
     override fun onFailure(call: Call<SymmetricKeyResponse>, t: Throwable) {
-        val str = ""
+
     }
 
     override fun onResponse(call: Call<SymmetricKeyResponse>, response: Response<SymmetricKeyResponse>) {

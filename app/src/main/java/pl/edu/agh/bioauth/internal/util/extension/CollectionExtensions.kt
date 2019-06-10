@@ -23,3 +23,22 @@ internal fun <K, I: Iterable<T>, T> List<Map<K, I>>.flattenMapList(): Map<K, Lis
         .mapValues { it.value.flatten() }
 
 internal fun <T> List<T>.takeHalf(): List<T> = shuffled().take(size / 2)
+
+internal operator fun <T> List<T>.times(value: Int): List<T> =
+    generateSequence { asSequence() }
+        .take(value)
+        .flatMap { it }
+        .toList()
+
+internal inline fun <T: Number, R: Number> List<T>.mapWithPrevious(transform: (prev: T?, T) -> R): List<R> {
+    val resultList = mutableListOf<R>()
+    for (i in indices) {
+        resultList.add(transform(getOrNull(i - 1), get(i)))
+    }
+    return resultList
+}
+
+internal inline fun <T> List<T>.indexOfFirstOrNull(predicate: (T) -> Boolean): Int? {
+    val index = indexOfFirst(predicate)
+    return if (index >= 0) index else null
+}

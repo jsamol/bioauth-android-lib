@@ -25,6 +25,8 @@ internal object ErrorUtil {
     private const val CAMERA_PERMISSION_DENIED = "Could not open the camera. Camera permission has been denied."
     private const val CAMERA_API_NOT_SUPPORTED = "Camera2 API is not supported on this device."
 
+    private const val RUNTIME_UNKNOWN_NUMERIC_TYPE = "Unknown numeric type."
+
     fun failWithSdkUninitialized(): Nothing = throw SdkUninitializedException()
 
     fun failWithUnknownInjectingType(): Nothing = throw InjectionException(INJECTION_UNKNOWN_REQUESTED_TYPE)
@@ -40,6 +42,8 @@ internal object ErrorUtil {
     fun failWithCameraInterruptedClosing(cause: Exception? = null): Nothing = throw RuntimeException(CAMERA_INTERRUPTED_CLOSING, cause)
 
     fun failWithIllegalState(): Nothing = throw IllegalStateException()
+
+    fun failWithUnknownNumericType(): Nothing = throw RuntimeException(RUNTIME_UNKNOWN_NUMERIC_TYPE)
 
     fun failWithLivenessTestFailed(): Nothing = throw LivenessException(LIVENESS_TEST_FAILED)
 
