@@ -8,7 +8,7 @@ import pl.edu.agh.bioauth.internal.biometrics.common.type.BiometricsType
 import pl.edu.agh.bioauth.internal.data.AppCredentials
 import pl.edu.agh.bioauth.internal.network.model.response.AuthenticateResponse
 import pl.edu.agh.bioauth.internal.network.model.response.RegisterResponse
-import pl.edu.agh.bioauth.internal.network.model.response.SymmetricKeyResponse
+import pl.edu.agh.bioauth.internal.network.model.response.SessionKeyResponse
 import pl.edu.agh.bioauth.internal.network.service.AuthenticationService
 import pl.edu.agh.bioauth.internal.network.service.EncryptionService
 import pl.edu.agh.bioauth.internal.util.ErrorUtil
@@ -70,9 +70,9 @@ internal class ApiController(
         }
     }
 
-    fun getEncryptionKey(publicKey: String): Call<SymmetricKeyResponse> {
+    fun getSessionKey(publicKey: String): Call<SessionKeyResponse> {
         with(appCredentials) {
-            return encryptionService.getSymmetricnKey(appId, appSecret, publicKey)
+            return encryptionService.getSessionKey(appId, appSecret, publicKey)
         }
     }
 
