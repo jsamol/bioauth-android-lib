@@ -15,7 +15,6 @@ import pl.edu.agh.bioauth.exception.SdkUninitializedException
 import pl.edu.agh.bioauth.internal.biometrics.common.preprocess.LivenessDetector
 import pl.edu.agh.bioauth.internal.util.ErrorUtil
 import pl.edu.agh.bioauth.internal.util.FileUtil
-import pl.edu.agh.bioauth.internal.util.Logger
 import pl.edu.agh.bioauth.internal.util.extension.median
 import pl.edu.agh.bioauth.internal.util.extension.toInt
 import pl.edu.agh.bioauth.internal.util.type.FileType
@@ -64,7 +63,7 @@ internal class PhotoLivenessDetector : LivenessDetector() {
                         .flatten()
                         .toDoubleArray()
 
-                    val probability = LivenessClassifier.predict_proba(featureVector)[1]
+                    val probability = LivenessClassifier.predictProba(featureVector)[1]
                     measures[index].add((probability >= EPSILON).toInt())
                 }
 

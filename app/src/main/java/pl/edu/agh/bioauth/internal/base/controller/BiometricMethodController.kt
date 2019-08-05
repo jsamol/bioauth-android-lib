@@ -7,7 +7,6 @@ import pl.edu.agh.bioauth.internal.network.ApiController
 import pl.edu.agh.bioauth.internal.network.callback.ResultCallback
 import pl.edu.agh.bioauth.internal.network.callback.SymmetricKeyCallback
 import pl.edu.agh.bioauth.internal.util.FileUtil
-import pl.edu.agh.bioauth.internal.util.Logger
 import pl.edu.agh.bioauth.internal.util.SecurityUtil
 import pl.edu.agh.bioauth.internal.util.extension.decode64
 import pl.edu.agh.bioauth.internal.util.extension.stringValue
@@ -49,7 +48,7 @@ internal abstract class BiometricMethodController<C: ResultCallback<*, L, E>, L:
 
     private fun getEncryptionKey(onSuccess: (String, String, String, PrivateKey) -> Unit) {
         val keyPair = securityUtil.keyPair
-        apiController.getEncryptionKey(keyPair.public.stringValue)
+        apiController.getSessionKey(keyPair.public.stringValue)
             .enqueue(symmetricKeyCallback.also { it.onSuccess = { id, key, iv ->
                 onSuccess(id, key, iv, keyPair.private)
             } })

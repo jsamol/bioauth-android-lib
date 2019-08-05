@@ -6338,7 +6338,7 @@ class LivenessClassifier {
         return class_idx;
     }
     
-    public static double[] predict_proba(double[] features) {
+    public static double[] predictProba(double[] features) {
         int n_classes = 2;
 
         int[] classes = new int[n_classes];
@@ -6377,7 +6377,7 @@ class LivenessClassifier {
             }
 
             // Probability:
-            double[] probability = LivenessClassifier.predict_proba(features);
+            double[] probability = LivenessClassifier.predictProba(features);
             System.out.println(Arrays.toString(probability));
 
         }
