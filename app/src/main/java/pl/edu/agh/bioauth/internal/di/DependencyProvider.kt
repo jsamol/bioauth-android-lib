@@ -10,7 +10,12 @@ import pl.edu.agh.bioauth.internal.di.annotation.Provider
 import pl.edu.agh.bioauth.internal.di.component.AbstractComponent
 import pl.edu.agh.bioauth.internal.di.component.app.AppComponent
 import pl.edu.agh.bioauth.internal.di.component.fragment.FaceRecognitionFragmentComponent
+import pl.edu.agh.bioauth.internal.di.factory.AbstractFactory
+import pl.edu.agh.bioauth.internal.di.field.InjectableField
+import pl.edu.agh.bioauth.internal.di.field.InjectableProperty
+import pl.edu.agh.bioauth.internal.di.field.InjectablePropertyFactory
 import pl.edu.agh.bioauth.internal.util.ErrorUtil
+import pl.edu.agh.bioauth.internal.util.extension.kClass
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
@@ -61,36 +66,67 @@ internal object DependencyProvider {
         targetMap?.get()?.remove(target)
     }
 
-    fun <R, T> inject(init: (T.() -> Unit)? = null): ReadOnlyProperty<R, T> = object : ReadOnlyProperty<R, T> {
+    fun <R, T: Any> inject(kClass: KClass<T>? = null, init: T.() -> Unit = {}): ReadOnlyProperty<R, T> = object : ReadOnlyProperty<R, T> {
+
         override fun getValue(thisRef: R, property: KProperty<*>): T {
-            val appDependencies = appComponent?.dependencies ?: emptyMap()
-            val dependencies = when (thisRef) {
-                is ViewModel -> {
-                    val viewModelDependencies = viewModelComponents[thisRef]?.dependencies ?: emptyMap()
-                    appDependencies + viewModelDependencies
-                }
-                is Fragment -> {
-                    val fragmentDependencies = fragmentComponents[thisRef]?.dependencies ?: emptyMap()
-                    val activityDependencies = activityComponents[thisRef.requireActivity()]?.dependencies ?: emptyMap()
-                    appDependencies + activityDependencies + fragmentDependencies
-                }
-                is Activity -> {
-                    val activityDependencies = activityComponents[thisRef]?.dependencies ?: emptyMap()
-                    appDependencies + activityDependencies
-                }
-                else -> appDependencies
-            }
+            val dependencies = getFields(thisRef, InjectableProperty::class)
+            val injectableProperty = getInjectableField(kClass ?: property.kClass, property, dependencies)
 
-            val injectableProperties = dependencies[property.returnType] ?: ErrorUtil.failWithUnknownInjectingType()
-
-            val propertyName = property.findAnnotation<Named>()?.value
-
-            if (injectableProperties.size > 1) {
-                propertyName ?: ErrorUtil.failWithMultipleInjectingTypes()
-            }
-
-            return (injectableProperties.firstOrNull { it.name == propertyName }?.value as? T)?.apply { init?.invoke(this) }
-                ?: ErrorUtil.failWithUnknownInjectingProperty()
+            return (injectableProperty?.value as? T)?.apply(init) ?: ErrorUtil.failWithUnknownInjectingProperty()
         }
+    }
+
+    fun <R, T: Any, S> factory(selector: () -> S?, init: T.() -> Unit = {}): ReadOnlyProperty<R, T?> = object : ReadOnlyProperty<R, T?> {
+
+        private val factorySelector: S?
+            get() = selector()
+
+        override fun getValue(thisRef: R, property: KProperty<*>): T? =
+            factorySelector?.let {
+                val factories = getFields(thisRef, InjectablePropertyFactory::class)
+                val injectableFactory = getInjectableField(property.kClass, property, factories)
+
+                return (injectableFactory?.value as? AbstractFactory<S, T>)?.create(it)?.apply(init)
+                        ?: ErrorUtil.failWithUnknownInjectingProperty()
+            }
+    }
+
+    private fun <R, T: InjectableField<*>> getFields(ref: R, fieldsType: KClass<T>): Map<KClass<*>, List<InjectableField<*>>> {
+        val componentFields: (AbstractComponent?) -> Map<KClass<*>, List<InjectableField<*>>> = { when (fieldsType) {
+            InjectableProperty::class -> it?.dependencies
+            InjectablePropertyFactory::class -> it?.factories
+            else -> null
+        } ?: emptyMap() }
+
+        val appFields = componentFields(appComponent)
+
+        return when (ref) {
+            is ViewModel -> {
+                val viewModelFields = componentFields(viewModelComponents[ref])
+                appFields + viewModelFields
+            }
+            is Fragment -> {
+                val fragmentFields = componentFields(fragmentComponents[ref])
+                val activityFields = componentFields(activityComponents[ref.requireActivity()])
+                appFields + activityFields + fragmentFields
+            }
+            is Activity -> {
+                val activityFields = componentFields(activityComponents[ref])
+                appFields + activityFields
+            }
+            else -> appFields
+        }
+    }
+
+    private fun <T: InjectableField<*>> getInjectableField(kClass: KClass<*>, property: KProperty<*>, fields: Map<KClass<*>, List<T>>): T? {
+        val injectableFields = fields[kClass] ?: ErrorUtil.failWithUnknownInjectingType()
+
+        val propertyName = property.findAnnotation<Named>()?.value
+
+        if (injectableFields.size > 1) {
+            propertyName ?: ErrorUtil.failWithMultipleInjectingTypes()
+        }
+
+        return injectableFields.firstOrNull { it.name == propertyName }
     }
 }

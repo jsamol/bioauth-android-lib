@@ -11,7 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import pl.edu.agh.bioauth.internal.di.Injectable
 
-internal abstract class BaseFragment<T: BaseViewModel> : Fragment(), Injectable {
+internal abstract class BaseFragment<T: BaseViewModel<*>> : Fragment(), Injectable {
 
     protected abstract val viewModelType: Class<T>
     protected abstract val layoutId: Int

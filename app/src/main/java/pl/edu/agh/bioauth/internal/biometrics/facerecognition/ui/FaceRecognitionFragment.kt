@@ -136,13 +136,7 @@ internal class FaceRecognitionFragment : BaseFragment<FaceRecognitionViewModel>(
     }
 
     fun authenticate(userId: String?, authenticationListener: AuthenticationListener, livenessMode: LivenessMode) {
-        initMethod(
-            AuthenticationMethod(
-                userId,
-                authenticationListener,
-                livenessMode
-            )
-        )
+        initMethod(AuthenticationMethod(userId, authenticationListener, livenessMode))
     }
 
     private fun initMethod(methodType: MethodType<*>) {

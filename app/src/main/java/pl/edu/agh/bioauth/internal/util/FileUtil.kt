@@ -18,6 +18,10 @@ internal object FileUtil {
     private val appCacheDir: File
         get() = BioAuth.instance?.applicationContext?.cacheDir ?: ErrorUtil.failWithSdkUninitialized()
 
+    fun createEncryptedFile(bytes: ByteArray, dir: String, name: String): File {
+        return File(dir, "${DEFAULT_FILE_PREFIX}_$name").apply { writeBytes(bytes) }
+    }
+
     fun createTempFile(fileType: String): File =
         createTempFile(null, fileType, "")
 

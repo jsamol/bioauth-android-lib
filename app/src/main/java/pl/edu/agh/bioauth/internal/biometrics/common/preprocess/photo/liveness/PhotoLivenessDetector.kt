@@ -2,7 +2,7 @@
  * The algorithm is based on https://github.com/ee09115/spoofing_detection
  */
 
-package pl.edu.agh.bioauth.internal.biometrics.common.photo.liveness
+package pl.edu.agh.bioauth.internal.biometrics.common.preprocess.photo.liveness
 
 import android.content.res.Resources
 import org.opencv.core.*
@@ -12,19 +12,21 @@ import org.opencv.objdetect.CascadeClassifier
 import pl.edu.agh.bioauth.BioAuth
 import pl.edu.agh.bioauth.R
 import pl.edu.agh.bioauth.exception.SdkUninitializedException
+import pl.edu.agh.bioauth.internal.biometrics.common.preprocess.LivenessDetector
 import pl.edu.agh.bioauth.internal.util.ErrorUtil
 import pl.edu.agh.bioauth.internal.util.FileUtil
 import pl.edu.agh.bioauth.internal.util.extension.median
+import pl.edu.agh.bioauth.internal.util.extension.toInt
 import pl.edu.agh.bioauth.internal.util.type.FileType
 import java.io.File
 
-internal class PhotoLivenessDetector {
+internal class PhotoLivenessDetector : LivenessDetector() {
 
     @get:Throws(SdkUninitializedException::class)
     private val resources: Resources
         get() = BioAuth.instance?.applicationContext?.resources ?: ErrorUtil.failWithSdkUninitialized()
 
-    fun testLiveness(samples: List<File>): Boolean {
+    override fun testLiveness(samples: List<File>): Boolean {
         val faceCascadeFile = FileUtil.createTempFile(FileType.XML)
         resources.openRawResource(R.raw.bioauth_haarcascade_frontalface_default).use { input ->
             faceCascadeFile.outputStream().use { output ->
@@ -61,8 +63,8 @@ internal class PhotoLivenessDetector {
                         .flatten()
                         .toDoubleArray()
 
-                    val prediction = LivenessClassifier.predict(featureVector)
-                    measures[index].add(prediction)
+                    val probability = LivenessClassifier.predictProba(featureVector)[1]
+                    measures[index].add((probability >= EPSILON).toInt())
                 }
 
                 sampleVotes.add(measures[index].median() ?: -1)
@@ -100,6 +102,8 @@ internal class PhotoLivenessDetector {
     }
 
     companion object {
+        private const val EPSILON = 0.7
+
         init {
             System.loadLibrary("opencv_java3")
         }
